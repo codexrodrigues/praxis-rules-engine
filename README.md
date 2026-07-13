@@ -45,6 +45,6 @@ Maven 3.9+ e Java exatamente 21 sao impostos pelo Enforcer. O build gera JAR bin
 
 ## Estado e ownership
 
-O runtime JSON Logic, contratos RuleSet, planner deterministico, registry versionado e evaluator service-level existem localmente. O repositorio canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para `main` passa por `mvn clean verify`. O POM de desenvolvimento permanece `0.0.1-SNAPSHOT`; a coordenada publica atual e `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.6`. Os contratos RuleSet ainda exigem a proxima publicacao oficial e smoke downstream antes de consumo pelo Quickstart.
+O runtime JSON Logic, contratos RuleSet, planner deterministico, registry versionado e evaluator service-level estao publicados. O repositorio canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para `main` passa por `mvn clean verify`. O POM de desenvolvimento permanece `0.0.1-SNAPSHOT`; a coordenada publica atual e `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.8`, com engine contract `1.1`. O smoke service-level do Praxis API Quickstart resolveu essa coordenada diretamente do Maven Central. A `0.1.0-beta.7` nao deve ser adotada por hosts porque consolidava incorretamente `ALLOW` intermediario com `NOT_APPLICABLE` terminal.
 
 Consulte [architecture.md](docs/architecture.md), [operator-conformance-matrix.md](docs/operator-conformance-matrix.md), [release-readiness.md](docs/release-readiness.md) e o [pacote de ADRs da plataforma de regras](docs/p2f-rule-platform-adrs.md).
