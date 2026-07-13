@@ -19,8 +19,10 @@ a prova downstream encontrou uma consolidação incorreta de
 deve ser adotada por hosts. A correção altera a semântica determinística e eleva
 o engine contract de `1.0` para `1.1`.
 
-Classificação da próxima linha: correção ainda dentro do canal beta público
-ativo. Portanto, a candidata correta é `0.1.0-beta.8`, não uma major nova nem
-uma versão estável. Depois da disponibilidade no Maven Central, Config Starter
-e Quickstart devem executar smoke direto contra a coordenada pública, sem
-override de repositório local.
+A correção foi publicada como `0.1.0-beta.8`, ainda dentro do canal beta
+público ativo, com engine contract `1.1`. O smoke service-level do Quickstart
+resolveu a coordenada diretamente do Maven Central, sem override de repositório
+local, e passou os cenários focais de `ALLOW`, `DENY`, `NOT_APPLICABLE` e
+`INCONCLUSIVE`, inclusive o bloqueio de `EFFECT_INTENT`. A `beta.8` é a
+coordenada pública corrente para novos consumidores; a `beta.7` permanece
+explicitamente não recomendada.
