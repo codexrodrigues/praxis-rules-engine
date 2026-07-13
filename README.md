@@ -27,6 +27,18 @@ RuleEvaluationResult decision = new PraxisRuleSetEngine(registry)
         .evaluate(plan, facts, nowUtc, userTimeZone);
 ```
 
+Para consumo governado, o control plane publica um `PublishedRuleSnapshot`. O
+host valida a versão exata do seu contrato e prepara o snapshot fora do caminho
+de avaliação antes de trocar sua referência ativa:
+
+```java
+CompiledRuleSnapshot prepared = new PraxisRuleSnapshotCompiler(registry)
+        .compile(snapshot, "my-domain-host/1.0");
+```
+
+O `snapshotContentHash` identifica o conteúdo imutável. Concorrência, ETag do
+head, persistência, rollback, cache e troca atômica continuam fora deste JAR.
+
 O resultado preserva `DENY`, `NOT_APPLICABLE`, `INCONCLUSIVE` e
 `TECHNICAL_ERROR` sem colapsa-los em boolean, inclui `planDigest`, `factsDigest`,
 baseline de engine/dialect e versoes das implementacoes Java utilizadas.
