@@ -107,8 +107,21 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$GPG_PRIVATE_KEY" || { echo "GPG_PRIVATE_KEY is required"; exit 1; }
+          umask 077
           mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
-          printf '%s' "$GPG_PRIVATE_KEY" | tr -d '\r' | gpg --batch --import
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          gpgconf --kill gpg-agent || true
+          printf '%s' "$GPG_PRIVATE_KEY" > /tmp/gpg.key.raw
+          perl -i -pe 's/^\x{FEFF}//;' /tmp/gpg.key.raw
+          tr -d '\r' < /tmp/gpg.key.raw > /tmp/gpg.key.normalized
+          if grep -q "BEGIN PGP PRIVATE KEY BLOCK" /tmp/gpg.key.normalized; then
+            awk 'found{print} /BEGIN PGP PRIVATE KEY BLOCK/{found=1} /END PGP PRIVATE KEY BLOCK/{print; exit}' /tmp/gpg.key.normalized > /tmp/gpg.key
+          else
+            tr -d ' \t\n\r' < /tmp/gpg.key.normalized | base64 -d > /tmp/gpg.key
+          fi
+          gpg --batch --import /tmp/gpg.key
+          gpg --batch --list-secret-keys --keyid-format LONG
           key="${GPG_KEY_ID:-$(gpg --batch --list-secret-keys --with-colons | awk -F: '/^sec/ {print $5; exit}')}"
           test -n "$key" || { echo "No GPG secret key found"; exit 1; }
           echo "GPG_KEY_ID=$key" >> "$GITHUB_ENV"

@@ -4,6 +4,9 @@
 
 - GitHub repository secrets: `CENTRAL_TOKEN_USER`, `CENTRAL_TOKEN_PASS`,
   `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`, and optionally `GPG_KEY_ID`.
+- `GPG_PRIVATE_KEY` may be an ASCII-armored private-key block or a base64
+  encoding of the exported key. The workflow removes a UTF-8 BOM, CRLF line
+  endings, and any accidental text before the armor header before importing it.
 - An active `io.github.codexrodrigues` namespace in Sonatype Central.
 - A release version that is not already published and follows SemVer.
 - A successful consumer smoke test against the published version before any
