@@ -1,0 +1,151 @@
+name: Release Praxis Rules Engine
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      create_tag:
+        description: Create and push a release tag from main.
+        type: boolean
+        required: true
+        default: true
+      version:
+        description: Explicit semver version, without v (for example 0.1.0-beta.1).
+        type: string
+        required: false
+      bump:
+        description: Semver bump when version is omitted.
+        type: choice
+        required: true
+        default: prerelease
+        options: [patch, minor, major, prerelease]
+      preid:
+        description: Pre-release identifier when bump=prerelease.
+        type: string
+        required: true
+        default: beta
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  create_tag:
+    if: github.event_name == 'workflow_dispatch' && inputs.create_tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT || github.token }}
+      - id: version
+        name: Resolve release version
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          VERSION="${{ inputs.version }}"
+          if [[ -z "$VERSION" ]]; then
+            latest="$(git tag -l 'v[0-9]*' | sed 's/^v//' | sort -V | tail -n1 || true)"
+            base="${latest%%-*}"
+            if [[ -z "$base" ]]; then base="0.1.0"; fi
+            IFS='.' read -r major minor patch <<< "$base"
+            case "${{ inputs.bump }}" in
+              major) VERSION="$((major + 1)).0.0" ;;
+              minor) VERSION="$major.$((minor + 1)).0" ;;
+              patch) VERSION="$major.$minor.$((patch + 1))" ;;
+              prerelease)
+                preid="${{ inputs.preid }}"
+                [[ "$preid" =~ ^[0-9A-Za-z-]+$ ]] || { echo "Invalid preid"; exit 1; }
+                existing="$(git tag -l "v${base}-${preid}.*" | sed 's/^v//' | sort -V | tail -n1 || true)"
+                if [[ -n "$existing" ]]; then VERSION="${base}-${preid}.$((${existing##*.} + 1))"; else VERSION="${base}-${preid}.1"; fi
+                ;;
+            esac
+          fi
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]] || { echo "Invalid semver: $VERSION"; exit 1; }
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Create annotated tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="v${{ steps.version.outputs.value }}"
+          git rev-parse "$tag" >/dev/null 2>&1 && { echo "Tag already exists: $tag"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "Release $tag"
+          git push origin "$tag"
+
+  publish:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      CENTRAL_TOKEN_USER: ${{ secrets.CENTRAL_TOKEN_USER }}
+      CENTRAL_TOKEN_PASS: ${{ secrets.CENTRAL_TOKEN_PASS }}
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+    steps:
+      - uses: actions/checkout@v7.0.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v5.5.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          server-id: central
+          server-username: CENTRAL_TOKEN_USER
+          server-password: CENTRAL_TOKEN_PASS
+      - name: Import GPG private key
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GPG_PRIVATE_KEY" || { echo "GPG_PRIVATE_KEY is required"; exit 1; }
+          mkdir -p ~/.gnupg && chmod 700 ~/.gnupg
+          printf '%s' "$GPG_PRIVATE_KEY" | tr -d '\r' | gpg --batch --import
+          key="${GPG_KEY_ID:-$(gpg --batch --list-secret-keys --with-colons | awk -F: '/^sec/ {print $5; exit}')}"
+          test -n "$key" || { echo "No GPG secret key found"; exit 1; }
+          echo "GPG_KEY_ID=$key" >> "$GITHUB_ENV"
+      - id: version
+        name: Resolve release version from tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]] || { echo "Invalid tag version"; exit 1; }
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+      - name: Set release version
+        run: mvn --batch-mode --no-transfer-progress versions:set -DnewVersion=${{ steps.version.outputs.value }} -DgenerateBackupPoms=false
+      - name: Build and sign
+        run: mvn --batch-mode --no-transfer-progress -P release -Dgpg.skip=false -Dgpg.keyname="$GPG_KEY_ID" -Dgpg.passphrase="$MAVEN_GPG_PASSPHRASE" clean verify
+      - name: Verify signed artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.value }}"
+          test -f "target/praxis-rules-engine-${version}.jar.asc"
+          test -f "target/praxis-rules-engine-${version}-sources.jar.asc"
+          test -f "target/praxis-rules-engine-${version}-javadoc.jar.asc"
+      - name: Publish to Maven Central
+        run: mvn --batch-mode --no-transfer-progress -P release -Dgpg.skip=false -Dgpg.passphrase="$MAVEN_GPG_PASSPHRASE" -DautoPublish=true -DwaitUntil=uploaded -DwaitMaxTime=1800 clean verify org.sonatype.central:central-publishing-maven-plugin:publish
+      - name: Verify Maven Central availability
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ steps.version.outputs.value }}"
+          url="https://repo1.maven.org/maven2/io/github/codexrodrigues/praxis-rules-engine/${version}/praxis-rules-engine-${version}.pom"
+          for attempt in $(seq 1 80); do
+            if [[ "$(curl -L -sS -o /dev/null -w '%{http_code}' "$url")" == "200" ]]; then
+              mvn --batch-mode --no-transfer-progress dependency:get -Dartifact="io.github.codexrodrigues:praxis-rules-engine:${version}" -Dtransitive=false
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Maven Central did not expose ${version} within 40 minutes" >&2
+          exit 1

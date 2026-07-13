@@ -31,6 +31,6 @@ Maven 3.9+ e Java exatamente 21 sao impostos pelo Enforcer. O build gera JAR bin
 
 ## Estado e ownership
 
-O runtime, registry introspectavel, limits, paths fechados, regex segura, contexto temporal e suite focal existem. O repositorio canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para `main` passa por `mvn clean verify`. A coordenada permanece `0.0.1-SNAPSHOT`; nao houve publicacao nem tag. A publicacao no Maven Central continua bloqueada ate serem definidos licenca, developers, assinatura, Central Portal, estrategia de versao e workflow oficial por tag.
+O runtime, registry introspectavel, limits, paths fechados, regex segura, contexto temporal e suite focal existem. O repositorio canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para `main` passa por `mvn clean verify`. A coordenada permanece `0.0.1-SNAPSHOT`; nao houve publicacao nem tag. O projeto adota Apache-2.0, metadados Maven Central, assinatura GPG e workflow oficial por tag; a primeira release continua bloqueada ate configurar os secrets do repositório e executar o smoke downstream contra um artefato público.
 
 Consulte [architecture.md](docs/architecture.md), [operator-conformance-matrix.md](docs/operator-conformance-matrix.md) e [release-readiness.md](docs/release-readiness.md).
