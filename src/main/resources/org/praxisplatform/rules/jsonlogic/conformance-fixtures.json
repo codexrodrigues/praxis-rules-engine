@@ -1,0 +1,2155 @@
+{
+  "version": "2026-07-13",
+  "description": "Canonical typed FE/BE Json Logic conformance corpus for Praxis.",
+  "operatorCatalog": [
+    ["var","native",1,2],["==","native",2,2],["===","native",2,2],["!=","native",2,2],["!==","native",2,2],
+    [">","native",2,2],[">=","native",2,2],["<","native",2,2],["<=","native",2,2],["!","native",1,1],["!!","native",1,1],
+    ["and","native",1,null],["or","native",1,null],["if","native",2,null],["in","native",2,2],["cat","native",1,null],
+    ["substr","native",2,3],["merge","native",1,null],["map","native",2,2],["filter","native",2,2],["reduce","native",2,3],
+    ["all","native",2,2],["some","native",2,2],["none","native",2,2],["+","native",1,null],["-","native",1,null],
+    ["*","native",1,null],["/","native",2,null],["%","native",2,2],["min","native",1,null],["max","native",1,null],
+    ["contains","praxis",2,2],["startsWith","praxis",2,2],["endsWith","praxis",2,2],["matches","praxis",2,2],
+    ["isBlank","praxis",1,1],["len","praxis",1,1],["round","praxis",1,1],["ceil","praxis",1,1],["floor","praxis",1,1],
+    ["abs","praxis",1,1],["coalesce","praxis",1,null],["now","praxis",0,0],["date","praxis",1,1],
+    ["yearsSince","praxis",1,1],["monthsSince","praxis",1,1],["daysSince","praxis",1,1],["toNumber","praxis",1,1],
+    ["stringify","praxis",1,1],["jsonGet","praxis",2,2],["hasKey","praxis",2,2],["isToday","praxis",1,1],
+    ["inLast","praxis",3,3],["weekdayIn","praxis",2,2]
+  ],
+  "evaluationCases": [
+    {
+      "id": "var-existing",
+      "expression": {
+        "var": "x"
+      },
+      "data": {
+        "x": 1
+      },
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 1,
+        "truthy": true
+      }
+    },
+    {
+      "id": "var-missing",
+      "expression": {
+        "var": "x"
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": null,
+        "truthy": false
+      }
+    },
+    {
+      "id": "var-default",
+      "expression": {
+        "var": [
+          "x",
+          "fallback"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": "fallback",
+        "truthy": true
+      }
+    },
+    {
+      "id": "eq-loose-number-string",
+      "expression": {
+        "==": [
+          1,
+          "1"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "eq-strict-number",
+      "expression": {
+        "===": [
+          1,
+          1
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "neq-loose",
+      "expression": {
+        "!=": [
+          1,
+          "2"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "neq-strict-type",
+      "expression": {
+        "!==": [
+          1,
+          "1"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "gt",
+      "expression": {
+        ">": [
+          2,
+          1
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "gte",
+      "expression": {
+        ">=": [
+          2,
+          2
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "lt",
+      "expression": {
+        "<": [
+          1,
+          2
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "lte",
+      "expression": {
+        "<=": [
+          2,
+          2
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "not",
+      "expression": {
+        "!": [
+          []
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "double-not",
+      "expression": {
+        "!!": "x"
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "and",
+      "expression": {
+        "and": [
+          true,
+          "last"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": "last",
+        "truthy": true
+      }
+    },
+    {
+      "id": "or",
+      "expression": {
+        "or": [
+          false,
+          "hit"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": "hit",
+        "truthy": true
+      }
+    },
+    {
+      "id": "if",
+      "expression": {
+        "if": [
+          false,
+          "no",
+          "yes"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": "yes",
+        "truthy": true
+      }
+    },
+    {
+      "id": "in-array",
+      "expression": {
+        "in": [
+          2,
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "cat",
+      "expression": {
+        "cat": [
+          "a",
+          1
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": "a1",
+        "truthy": true
+      }
+    },
+    {
+      "id": "substr",
+      "expression": {
+        "substr": [
+          "Praxis",
+          1,
+          3
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": "rax",
+        "truthy": true
+      }
+    },
+    {
+      "id": "merge",
+      "expression": {
+        "merge": [
+          [
+            1,
+            2
+          ],
+          [
+            3
+          ]
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": [
+          1,
+          2,
+          3
+        ],
+        "truthy": true
+      }
+    },
+    {
+      "id": "map",
+      "expression": {
+        "map": [
+          [
+            1,
+            2
+          ],
+          {
+            "+": [
+              {
+                "var": ""
+              },
+              1
+            ]
+          }
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": [
+          2,
+          3
+        ],
+        "truthy": true
+      }
+    },
+    {
+      "id": "filter",
+      "expression": {
+        "filter": [
+          [
+            1,
+            2,
+            3
+          ],
+          {
+            ">": [
+              {
+                "var": ""
+              },
+              1
+            ]
+          }
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": [
+          2,
+          3
+        ],
+        "truthy": true
+      }
+    },
+    {
+      "id": "reduce",
+      "expression": {
+        "reduce": [
+          [
+            1,
+            2,
+            3
+          ],
+          {
+            "+": [
+              {
+                "var": "accumulator"
+              },
+              {
+                "var": "current"
+              }
+            ]
+          },
+          0
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 6,
+        "truthy": true
+      }
+    },
+    {
+      "id": "all",
+      "expression": {
+        "all": [
+          [
+            1,
+            2
+          ],
+          {
+            ">": [
+              {
+                "var": ""
+              },
+              0
+            ]
+          }
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "some",
+      "expression": {
+        "some": [
+          [
+            0,
+            2
+          ],
+          {
+            ">": [
+              {
+                "var": ""
+              },
+              1
+            ]
+          }
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "none",
+      "expression": {
+        "none": [
+          [
+            0,
+            1
+          ],
+          {
+            ">": [
+              {
+                "var": ""
+              },
+              1
+            ]
+          }
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "add",
+      "expression": {
+        "+": [
+          1,
+          2,
+          3
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 6,
+        "truthy": true
+      }
+    },
+    {
+      "id": "subtract",
+      "expression": {
+        "-": [
+          10,
+          3,
+          2
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 5,
+        "truthy": true
+      }
+    },
+    {
+      "id": "multiply",
+      "expression": {
+        "*": [
+          2,
+          3
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 6,
+        "truthy": true
+      }
+    },
+    {
+      "id": "divide",
+      "expression": {
+        "/": [
+          8,
+          2
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 4,
+        "truthy": true
+      }
+    },
+    {
+      "id": "modulo",
+      "expression": {
+        "%": [
+          7,
+          4
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 3,
+        "truthy": true
+      }
+    },
+    {
+      "id": "min",
+      "expression": {
+        "min": [
+          3,
+          1,
+          2
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 1,
+        "truthy": true
+      }
+    },
+    {
+      "id": "max",
+      "expression": {
+        "max": [
+          3,
+          1,
+          2
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 3,
+        "truthy": true
+      }
+    },
+    {
+      "id": "contains-string",
+      "expression": {
+        "contains": [
+          "Praxis",
+          "rax"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "contains-null",
+      "expression": {
+        "contains": [
+          null,
+          "x"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": false,
+        "truthy": false
+      }
+    },
+    {
+      "id": "startsWith",
+      "expression": {
+        "startsWith": [
+          "Praxis",
+          "Pra"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "endsWith",
+      "expression": {
+        "endsWith": [
+          "Praxis",
+          "xis"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "matches",
+      "expression": {
+        "matches": [
+          "ABC-12",
+          "^[A-Z]{1,16}-[0-9]{1,16}$"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "isBlank",
+      "expression": {
+        "isBlank": "   "
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "len",
+      "expression": {
+        "len": {
+          "a": 1,
+          "b": 2
+        }
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 2,
+        "truthy": true
+      }
+    },
+    {
+      "id": "round",
+      "expression": {
+        "round": 1.6
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 2,
+        "truthy": true
+      }
+    },
+    {
+      "id": "ceil",
+      "expression": {
+        "ceil": 1.2
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 2,
+        "truthy": true
+      }
+    },
+    {
+      "id": "floor",
+      "expression": {
+        "floor": 1.8
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 1,
+        "truthy": true
+      }
+    },
+    {
+      "id": "abs",
+      "expression": {
+        "abs": -2
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 2,
+        "truthy": true
+      }
+    },
+    {
+      "id": "coalesce",
+      "expression": {
+        "coalesce": [
+          null,
+          "",
+          5
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 5,
+        "truthy": true
+      }
+    },
+    {
+      "id": "now",
+      "expression": {
+        "now": []
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 1775217600000,
+        "truthy": true
+      }
+    },
+    {
+      "id": "date",
+      "expression": {
+        "date": "2026-04-03"
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 1775174400000,
+        "truthy": true
+      }
+    },
+    {
+      "id": "yearsSince",
+      "expression": {
+        "yearsSince": "2025-04-03T12:00:00Z"
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 0,
+        "truthy": false
+      }
+    },
+    {
+      "id": "monthsSince",
+      "expression": {
+        "monthsSince": "2026-03-03T12:00:00Z"
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 1,
+        "truthy": true
+      }
+    },
+    {
+      "id": "daysSince",
+      "expression": {
+        "daysSince": "2026-04-01T12:00:00Z"
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 2,
+        "truthy": true
+      }
+    },
+    {
+      "id": "toNumber",
+      "expression": {
+        "toNumber": "12.5"
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 12.5,
+        "truthy": true
+      }
+    },
+    {
+      "id": "stringify",
+      "expression": {
+        "stringify": 12
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": "12",
+        "truthy": true
+      }
+    },
+    {
+      "id": "jsonGet",
+      "expression": {
+        "jsonGet": [
+          {
+            "a": {
+              "b": 2,
+              "c": 3
+            },
+            "_": 0
+          },
+          "a.b"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": 2,
+        "truthy": true
+      }
+    },
+    {
+      "id": "hasKey-null",
+      "expression": {
+        "hasKey": [
+          {
+            "a": null,
+            "_": 0
+          },
+          "a"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "isToday",
+      "expression": {
+        "isToday": "2026-04-03"
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "inLast",
+      "expression": {
+        "inLast": [
+          "2026-03-30",
+          7,
+          "days"
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    },
+    {
+      "id": "weekdayIn",
+      "expression": {
+        "weekdayIn": [
+          "2026-04-03",
+          [
+            5
+          ]
+        ]
+      },
+      "data": {},
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": true,
+        "truthy": true
+      }
+    }
+  ],
+  "evaluationErrorCases": [
+    { "id": "division-by-zero", "expression": { "/": [1, 0] }, "data": {}, "expect": { "code": "RULE_ARGUMENT_TYPE_INVALID", "operator": "/" } },
+    { "id": "substr-invalid-index", "expression": { "substr": ["abc", "x"] }, "data": {}, "expect": { "code": "RULE_ARGUMENT_TYPE_INVALID", "operator": "substr" } },
+    { "id": "in-last-invalid-unit", "expression": { "inLast": ["2026-10-31", 2, "fortnights"] }, "data": {}, "options": { "nowUtc": "2026-11-01T04:30:00Z", "userTimeZone": "America/New_York" }, "expect": { "code": "RULE_TEMPORAL_INPUT_INVALID" } }
+  ],
+  "validationCases": [
+    {
+      "id": "invalid-arity",
+      "expression": {
+        "===": [
+          1
+        ]
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "invalid-root",
+      "expression": {
+        "var": "form.x"
+      },
+      "options": {
+        "availableRoots": [
+          "row",
+          "computed"
+        ],
+        "allowImplicitRoot": false,
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ROOT_UNKNOWN"
+        ]
+      }
+    },
+    {
+      "id": "ambiguous-root",
+      "expression": {
+        "var": "status"
+      },
+      "options": {
+        "availableRoots": [
+          "form",
+          "row"
+        ],
+        "allowImplicitRoot": false,
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_CONTEXT_AMBIGUOUS"
+        ]
+      }
+    },
+    {
+      "id": "invalid-shape",
+      "expression": {
+        "left": 1,
+        "right": 2
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_SHAPE_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "unknown-operator",
+      "expression": {
+        "unknown": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_OPERATOR_UNKNOWN"
+        ]
+      }
+    },
+    {
+      "id": "invalid-path",
+      "expression": {
+        "var": "a..b"
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_PATH_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "unsafe-regex",
+      "expression": {
+        "matches": [
+          "a",
+          "a+"
+        ]
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_REGEX_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-var",
+      "expression": {
+        "var": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-3d3d",
+      "expression": {
+        "==": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-3d3d3d",
+      "expression": {
+        "===": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-213d",
+      "expression": {
+        "!=": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-213d3d",
+      "expression": {
+        "!==": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-3e",
+      "expression": {
+        ">": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-3e3d",
+      "expression": {
+        ">=": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-3c",
+      "expression": {
+        "<": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-3c3d",
+      "expression": {
+        "<=": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-21",
+      "expression": {
+        "!": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-2121",
+      "expression": {
+        "!!": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-and",
+      "expression": {
+        "and": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-or",
+      "expression": {
+        "or": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-if",
+      "expression": {
+        "if": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-in",
+      "expression": {
+        "in": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-cat",
+      "expression": {
+        "cat": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-substr",
+      "expression": {
+        "substr": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-merge",
+      "expression": {
+        "merge": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-map",
+      "expression": {
+        "map": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-filter",
+      "expression": {
+        "filter": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-reduce",
+      "expression": {
+        "reduce": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-all",
+      "expression": {
+        "all": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-some",
+      "expression": {
+        "some": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-none",
+      "expression": {
+        "none": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-2b",
+      "expression": {
+        "+": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-2d",
+      "expression": {
+        "-": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-2a",
+      "expression": {
+        "*": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-2f",
+      "expression": {
+        "/": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-25",
+      "expression": {
+        "%": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-min",
+      "expression": {
+        "min": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-max",
+      "expression": {
+        "max": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-contains",
+      "expression": {
+        "contains": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-startsWith",
+      "expression": {
+        "startsWith": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-endsWith",
+      "expression": {
+        "endsWith": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-matches",
+      "expression": {
+        "matches": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-isBlank",
+      "expression": {
+        "isBlank": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-len",
+      "expression": {
+        "len": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-round",
+      "expression": {
+        "round": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-ceil",
+      "expression": {
+        "ceil": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-floor",
+      "expression": {
+        "floor": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-abs",
+      "expression": {
+        "abs": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-coalesce",
+      "expression": {
+        "coalesce": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-now",
+      "expression": {
+        "now": [
+          null
+        ]
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-date",
+      "expression": {
+        "date": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-yearsSince",
+      "expression": {
+        "yearsSince": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-monthsSince",
+      "expression": {
+        "monthsSince": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-daysSince",
+      "expression": {
+        "daysSince": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-toNumber",
+      "expression": {
+        "toNumber": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-stringify",
+      "expression": {
+        "stringify": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-jsonGet",
+      "expression": {
+        "jsonGet": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-hasKey",
+      "expression": {
+        "hasKey": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-isToday",
+      "expression": {
+        "isToday": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-inLast",
+      "expression": {
+        "inLast": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    },
+    {
+      "id": "arity-weekdayIn",
+      "expression": {
+        "weekdayIn": []
+      },
+      "options": {
+        "requireExpressionObject": true
+      },
+      "expect": {
+        "valid": false,
+        "codes": [
+          "RULE_ARITY_INVALID"
+        ]
+      }
+    }
+  ]
+}
