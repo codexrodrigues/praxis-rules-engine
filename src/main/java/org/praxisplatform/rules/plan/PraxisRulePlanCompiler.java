@@ -169,6 +169,12 @@ public final class PraxisRulePlanCompiler {
                         "Effect-intent binding must use NOT_APPLICABLE when its condition is false",
                         binding.bindingKey());
             }
+            if (slot.stage() == DecisionStage.EFFECT_INTENT && binding.dependsOn().isEmpty()) {
+                throw failure(
+                        RulePlanIssueCode.PLAN_STAGE_INVALID,
+                        "Effect-intent binding requires an explicit decision dependency",
+                        binding.bindingKey());
+            }
             validateComposition(binding, slot);
             validateRequiredFacts(definition, binding);
             validateExecutor(definition, binding);

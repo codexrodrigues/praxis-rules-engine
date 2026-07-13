@@ -419,17 +419,31 @@ class PraxisRuleSetEngineTest {
                 return RuleExecutorResult.allow();
             }
         }));
+        DecisionSlot prerequisiteSlot = slot(
+                "prerequisite", DecisionStage.DOMAIN_DECISION, OverridePolicy.FORBIDDEN);
         DecisionSlot decisionSlot = slot(
                 "decision", DecisionStage.DOMAIN_DECISION, OverridePolicy.FORBIDDEN);
         DecisionSlot effectSlot = slot(
                 "effect", DecisionStage.EFFECT_INTENT, OverridePolicy.FORBIDDEN);
+        DecisionBinding prerequisite = new DecisionBinding(
+                "prerequisite",
+                "prerequisite",
+                DecisionSource.PRODUCT,
+                null,
+                RuleExecutorRef.jsonLogic(expression("true")),
+                List.of(),
+                5,
+                true,
+                RuleDecision.DENY,
+                "PREREQUISITE_FALSE",
+                List.of());
         DecisionBinding inconclusive = new DecisionBinding(
                 "decision",
                 "decision",
                 DecisionSource.PRODUCT,
                 null,
                 RuleExecutorRef.jsonLogic(expression("true")),
-                List.of(),
+                List.of("prerequisite"),
                 10,
                 true,
                 RuleDecision.DENY,
@@ -441,21 +455,60 @@ class PraxisRuleSetEngineTest {
                 DecisionSource.PRODUCT,
                 null,
                 RuleExecutorRef.java("benefits:effect-plan", "1.0.0"),
-                List.of(),
+                List.of("prerequisite"),
                 20,
                 true,
                 null,
                 null,
                 List.of());
         RuleDecisionPlan plan = new PraxisRulePlanCompiler(registry)
-                .compile(simpleDefinition(List.of(decisionSlot, effectSlot), List.of(inconclusive, effect)));
+                .compile(simpleDefinition(
+                        List.of(prerequisiteSlot, decisionSlot, effectSlot),
+                        List.of(prerequisite, inconclusive, effect)));
 
         var result = new PraxisRuleSetEngine(registry)
                 .evaluate(plan, JSON.createObjectNode().putObject("request"), NOW, ZONE);
 
         assertEquals(RuleDecision.INCONCLUSIVE, result.decision());
         assertEquals(0, effects.get());
-        assertEquals(List.of("PRIOR_DECISION_INCONCLUSIVE"), result.bindingResults().get(1).reasonCodes());
+        assertEquals(List.of("PRIOR_DECISION_INCONCLUSIVE"), result.bindingResults().get(2).reasonCodes());
+    }
+
+    @Test
+    void terminalNotApplicableIsNotLiftedByAnEarlierAllow() throws Exception {
+        DecisionSlot guardSlot = slot("guard", DecisionStage.PROTECTED_GUARD, OverridePolicy.FORBIDDEN);
+        DecisionSlot applicabilitySlot = slot(
+                "applicability", DecisionStage.DOMAIN_DECISION, OverridePolicy.FORBIDDEN);
+        DecisionBinding guard = jsonBinding(
+                "guard", "guard", List.of(), RuleDecision.DENY, "GUARD_FALSE");
+        DecisionBinding applicability = jsonBinding(
+                "applicability",
+                "applicability",
+                List.of("guard"),
+                RuleDecision.NOT_APPLICABLE,
+                "PROGRAM_NOT_APPLICABLE");
+        DecisionBinding allowedGuard = new DecisionBinding(
+                guard.bindingKey(),
+                guard.slotKey(),
+                guard.source(),
+                guard.compositionPolicy(),
+                RuleExecutorRef.jsonLogic(expression("true")),
+                guard.dependsOn(),
+                guard.order(),
+                guard.enabled(),
+                guard.falseDecision(),
+                guard.falseReasonCode(),
+                guard.requiredFactPaths());
+        RuleDecisionPlan plan = new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
+                .compile(simpleDefinition(
+                        List.of(guardSlot, applicabilitySlot),
+                        List.of(allowedGuard, applicability)));
+
+        var result = new PraxisRuleSetEngine(RuleBindingExecutorRegistry.empty())
+                .evaluate(plan, JSON.createObjectNode().putObject("request"), NOW, ZONE);
+
+        assertEquals(RuleDecision.NOT_APPLICABLE, result.decision());
+        assertEquals(List.of("PROGRAM_NOT_APPLICABLE"), result.bindingResults().get(1).reasonCodes());
     }
 
     @Test

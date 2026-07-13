@@ -13,11 +13,14 @@ requests. O namespace `io.github.codexrodrigues` foi publicado pelo workflow
 oficial assinado e a disponibilidade downstream da primeira coordenada foi
 verificada.
 
-Classificacao da proxima linha: os contratos RuleSet/planner/evaluator sao
-aditivos sobre o canal beta publico ativo. Portanto, a candidata correta e
-`0.1.0-beta.7`, nao uma major nova nem uma versao estavel. A implementacao e os
-testes focais do engine estao locais; a publicacao permanece bloqueada ate
-`mvn clean verify`, revisao do diff/commit remoto e workflow oficial por tag.
-Depois da disponibilidade no Maven Central, Config Starter e Quickstart devem
-executar smoke direto contra a coordenada publica, sem override de repositorio
-local.
+Os contratos RuleSet/planner/evaluator foram publicados em `0.1.0-beta.7`, mas
+a prova downstream encontrou uma consolidação incorreta de
+`ALLOW` intermediário com ramo terminal `NOT_APPLICABLE`. Essa coordenada não
+deve ser adotada por hosts. A correção altera a semântica determinística e eleva
+o engine contract de `1.0` para `1.1`.
+
+Classificação da próxima linha: correção ainda dentro do canal beta público
+ativo. Portanto, a candidata correta é `0.1.0-beta.8`, não uma major nova nem
+uma versão estável. Depois da disponibilidade no Maven Central, Config Starter
+e Quickstart devem executar smoke direto contra a coordenada pública, sem
+override de repositório local.
