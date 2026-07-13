@@ -121,6 +121,16 @@ public final class PraxisJsonLogicEngine {
      */
     public String stringify(Object v){try{return v instanceof Map<?,?>||v instanceof List<?>?MAPPER.writeValueAsString(v):String.valueOf(v);}catch(Exception e){throw new PraxisJsonLogicException(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID,"Value cannot be stringified.");}}
 
+    /**
+     * Validates a host-produced value against the same deterministic structural limits as JSON Logic results.
+     * @param value value crossing the runtime boundary
+     * @param limits explicit limits, or defaults when {@code null}
+     * @throws PraxisJsonLogicException when the value exceeds a deterministic limit
+     */
+    public void validateResultValue(Object value, JsonLogicLimits limits) {
+        checkResult(value, limits == null ? JsonLogicLimits.DEFAULT : limits);
+    }
+
     private Object evaluateNode(JsonNode n,JsonLogicEvaluationContext c,Budget b,int depth){b.visit(depth);if(n==null||n.isNull())return null;if(n.isNumber())return n.decimalValue();if(n.isTextual()){b.string(n.textValue().length());return n.textValue();}if(n.isBoolean())return n.booleanValue();if(n.isArray()){b.array(n.size());List<Object>r=new ArrayList<>();for(JsonNode x:n)r.add(evaluateNode(x,c,b,depth+1));return r;}if(!n.isObject())return MAPPER.convertValue(n,Object.class);ObjectNode o=(ObjectNode)n;if(o.size()!=1){Map<String,Object>m=new LinkedHashMap<>();o.properties().forEach(x->m.put(x.getKey(),evaluateNode(x.getValue(),c,b,depth+1)));return m;}var en=o.properties().iterator().next();String op=en.getKey();JsonNode raw=en.getValue();b.operation();return switch(op){case"var"->evalVar(raw,c,b,depth);case"and"->evalAnd(raw,c,b,depth);case"or"->evalOr(raw,c,b,depth);case"if"->evalIf(raw,c,b,depth);case"!"->!truthy(argValues(op,raw,c,b,depth,1,1).get(0));case"!!"->truthy(argValues(op,raw,c,b,depth,1,1).get(0));case"==","===","!=","!==",">",">=","<","<="->comparison(op,argValues(op,raw,c,b,depth,2,2));case"+","-","*","/","%","min","max"->arithmetic(op,argValues(op,raw,c,b,depth,op.equals("/")?2:1,op.equals("%")?2:null));case"in"->in(argValues(op,raw,c,b,depth,2,2));case"cat"->argValues(op,raw,c,b,depth,1,null).stream().map(v->v==null||v==MissingValue.INSTANCE?"":String.valueOf(v)).reduce("",String::concat);case"substr"->substr(argValues(op,raw,c,b,depth,2,3));case"merge"->merge(argValues(op,raw,c,b,depth,1,null),b);case"map","filter","reduce","all","some","none"->higher(op,raw,c,b,depth);default->custom(op,raw,c,b,depth);};}
     private Object evalVar(JsonNode r,JsonLogicEvaluationContext c,Budget b,int d){String p;JsonNode def=null;if(r.isTextual())p=r.textValue();else if(r.isArray()&&(r.size()==1||r.size()==2)&&r.get(0).isTextual()){p=r.get(0).textValue();if(r.size()==2)def=r.get(1);}else throw error(JsonLogicIssueCode.RULE_ARITY_INVALID,"`var` requires a string path or [path, defaultValue].","$","var");Object v=resolve(p,c);return v==MissingValue.INSTANCE&&def!=null?evaluateNode(def,c,b,d+1):v;}
     private Object evalAnd(JsonNode r,JsonLogicEvaluationContext c,Budget b,int d){List<JsonNode>a=args(r,"and",1,null);Object v=null;for(JsonNode x:a){v=evaluateNode(x,c,b,d+1);if(!truthy(v))return v;}return v;}
