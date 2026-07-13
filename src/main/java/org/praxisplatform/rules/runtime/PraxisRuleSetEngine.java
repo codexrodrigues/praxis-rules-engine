@@ -96,12 +96,11 @@ public final class PraxisRuleSetEngine {
 
         List<RuleBindingResult> bindingResults = new ArrayList<>();
         Map<String, RuleBindingResult> resultsByBinding = new LinkedHashMap<>();
-        boolean anyApplicable = false;
         boolean anyInconclusive = false;
         for (DecisionBinding binding : plan.orderedBindings()) {
             DecisionSlot slot = plan.slotsByKey().get(binding.slotKey());
             RuleBindingResult bindingResult = effectGateResult(
-                    slot, binding, anyApplicable, anyInconclusive);
+                    slot, binding, anyInconclusive);
             if (bindingResult == null) {
                 bindingResult = dependencyResult(slot, binding, resultsByBinding);
             }
@@ -117,7 +116,9 @@ public final class PraxisRuleSetEngine {
             bindingResults.add(bindingResult);
             resultsByBinding.put(binding.bindingKey(), bindingResult);
             switch (bindingResult.decision()) {
-                case ALLOW -> anyApplicable = true;
+                case ALLOW -> {
+                    // Consolidated from terminal bindings after all branches finish.
+                }
                 case NOT_APPLICABLE -> {
                     // Continue so another binding can establish applicability.
                 }
@@ -132,11 +133,18 @@ public final class PraxisRuleSetEngine {
                 }
             }
         }
+        java.util.Set<String> dependencyKeys = plan.orderedBindings().stream()
+                .flatMap(binding -> binding.dependsOn().stream())
+                .collect(java.util.stream.Collectors.toSet());
+        boolean terminalAllow = plan.orderedBindings().stream()
+                .filter(binding -> !dependencyKeys.contains(binding.bindingKey()))
+                .map(binding -> resultsByBinding.get(binding.bindingKey()))
+                .anyMatch(bindingResult -> bindingResult.decision() == RuleDecision.ALLOW);
         return result(
                 plan,
                 anyInconclusive
                         ? RuleDecision.INCONCLUSIVE
-                        : anyApplicable ? RuleDecision.ALLOW : RuleDecision.NOT_APPLICABLE,
+                        : terminalAllow ? RuleDecision.ALLOW : RuleDecision.NOT_APPLICABLE,
                 bindingResults,
                 anyInconclusive
                         ? bindingResults.stream()
@@ -151,7 +159,6 @@ public final class PraxisRuleSetEngine {
     private RuleBindingResult effectGateResult(
             DecisionSlot slot,
             DecisionBinding binding,
-            boolean anyApplicable,
             boolean anyInconclusive) {
         if (slot.stage() != DecisionStage.EFFECT_INTENT) {
             return null;
@@ -162,14 +169,6 @@ public final class PraxisRuleSetEngine {
                     binding,
                     RuleDecision.INCONCLUSIVE,
                     List.of("PRIOR_DECISION_INCONCLUSIVE"),
-                    null);
-        }
-        if (!anyApplicable) {
-            return bindingResult(
-                    slot,
-                    binding,
-                    RuleDecision.NOT_APPLICABLE,
-                    List.of("PRIOR_DECISION_NOT_ALLOWED"),
                     null);
         }
         return null;

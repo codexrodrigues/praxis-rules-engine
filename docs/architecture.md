@@ -42,7 +42,9 @@ engine contract, dialect e SHA-256 do corpus, rejeita roots desconhecidos,
 ciclos, dependencias futuras, fan-out excessivo e overrides incompativeis.
 Facts e outputs Java atravessam os mesmos limites estruturais do runtime JSON
 Logic. `EFFECT_INTENT` nao executa enquanto a decisao anterior nao puder ser
-consolidada como `ALLOW`, e o engine nunca materializa o efeito.
+consolidada como `ALLOW`, exige dependencia explicita e o engine nunca
+materializa o efeito. A decisao final usa os bindings terminais do DAG; um
+`ALLOW` intermediario nao converte um ramo terminal `NOT_APPLICABLE` em sucesso.
 
 ## Evolucao aceita
 

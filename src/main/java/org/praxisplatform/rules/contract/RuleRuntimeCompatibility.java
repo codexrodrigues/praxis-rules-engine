@@ -15,7 +15,7 @@ public record RuleRuntimeCompatibility(
         String jsonLogicCorpusSha256) {
 
     /** Current RuleSet contract version implemented by this engine. */
-    public static final String ENGINE_CONTRACT_VERSION = "1.0";
+    public static final String ENGINE_CONTRACT_VERSION = "1.1";
     /** Current normative JSON Logic dialect version. */
     public static final String JSON_LOGIC_DIALECT_VERSION = "1.0";
     /** SHA-256 of the packaged and Angular-owned normative corpus. */
