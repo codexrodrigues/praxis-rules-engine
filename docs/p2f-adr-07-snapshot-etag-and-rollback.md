@@ -18,6 +18,11 @@ completo, provenance de definições e evidências seguras de approval. O compil
 normaliza slots, bindings, sources e approvals antes de calcular o hash
 canônico e compila o `RuleDecisionPlan` antes que o control plane possa ativá-lo.
 
+O Control Plane usa uma registry `planning-only` contendo apenas coordenadas
+Java declaradas. Ela valida chave e versão, mas não possui código executável. O
+host recompila com sua registry executável e falha se qualquer implementação
+estiver ausente ou incompatível.
+
 ## Dois validators distintos
 
 O contrato separa deliberadamente dois validators HTTP:

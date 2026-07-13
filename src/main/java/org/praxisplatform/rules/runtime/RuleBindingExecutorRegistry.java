@@ -4,9 +4,11 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import org.praxisplatform.rules.contract.RuleImplementationRef;
 
-/** Immutable registry of trusted Java binding implementations. */
+/** Immutable registry of trusted Java implementation coordinates and optional executors. */
 public final class RuleBindingExecutorRegistry {
+    private final Map<String, RuleImplementationRef> implementations;
     private final Map<String, RuleBindingExecutor> executors;
 
     /**
@@ -28,7 +30,16 @@ public final class RuleBindingExecutorRegistry {
                 throw new IllegalArgumentException("Duplicate Java executor key: " + key);
             }
         }
+        Map<String, RuleImplementationRef> coordinates = new LinkedHashMap<>();
+        indexed.forEach((key, executor) -> coordinates.put(
+                key, new RuleImplementationRef(key, executor.implementationVersion())));
+        this.implementations = Map.copyOf(coordinates);
         this.executors = Map.copyOf(indexed);
+    }
+
+    private RuleBindingExecutorRegistry(Map<String, RuleImplementationRef> implementations) {
+        this.implementations = Map.copyOf(implementations);
+        this.executors = Map.of();
     }
 
     /**
@@ -40,12 +51,34 @@ public final class RuleBindingExecutorRegistry {
     }
 
     /**
+     * Creates a planning-only registry from published implementation coordinates.
+     *
+     * <p>This registry can validate a plan in a control plane but intentionally cannot execute
+     * Java bindings. Domain hosts must build an executable registry from trusted implementations.</p>
+     *
+     * @param declarations exact Java coordinates declared by the published RuleSet
+     * @return immutable non-executable registry for structural planning
+     */
+    public static RuleBindingExecutorRegistry planning(Collection<RuleImplementationRef> declarations) {
+        Map<String, RuleImplementationRef> indexed = new LinkedHashMap<>();
+        for (RuleImplementationRef declaration
+                : declarations == null ? java.util.List.<RuleImplementationRef>of() : declarations) {
+            Objects.requireNonNull(declaration, "implementation declaration must not be null");
+            if (indexed.putIfAbsent(declaration.implementationKey(), declaration) != null) {
+                throw new IllegalArgumentException(
+                        "Duplicate Java implementation declaration: " + declaration.implementationKey());
+            }
+        }
+        return new RuleBindingExecutorRegistry(indexed);
+    }
+
+    /**
      * Tests whether an implementation is present.
      * @param implementationKey namespaced key
      * @return whether the key is registered
      */
     public boolean contains(String implementationKey) {
-        return executors.containsKey(implementationKey);
+        return implementations.containsKey(implementationKey);
     }
 
     /**
@@ -55,8 +88,8 @@ public final class RuleBindingExecutorRegistry {
      * @return whether an exact compatible implementation is registered
      */
     public boolean isCompatible(String implementationKey, String implementationVersion) {
-        RuleBindingExecutor executor = executors.get(implementationKey);
-        return executor != null && executor.implementationVersion().equals(implementationVersion);
+        RuleImplementationRef implementation = implementations.get(implementationKey);
+        return implementation != null && implementation.implementationVersion().equals(implementationVersion);
     }
 
     /**

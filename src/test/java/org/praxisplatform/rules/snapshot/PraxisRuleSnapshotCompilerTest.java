@@ -17,6 +17,7 @@ import org.praxisplatform.rules.contract.PublishedRuleSnapshot;
 import org.praxisplatform.rules.contract.RuleDecision;
 import org.praxisplatform.rules.contract.RuleExecutorRef;
 import org.praxisplatform.rules.contract.RuleFailPolicy;
+import org.praxisplatform.rules.contract.RuleImplementationRef;
 import org.praxisplatform.rules.contract.RuleRuntimeCompatibility;
 import org.praxisplatform.rules.contract.RuleSetDefinition;
 import org.praxisplatform.rules.contract.RuleSetRef;
@@ -115,6 +116,36 @@ class PraxisRuleSnapshotCompilerTest {
                 () -> new PraxisRuleSnapshotCompiler(RuleBindingExecutorRegistry.empty())
                         .compile(duplicate, "quickstart/1.0"));
         assertEquals(RuleSnapshotIssueCode.SNAPSHOT_PROVENANCE_INVALID, provenance.getCode());
+    }
+
+    @Test
+    void planningOnlyRegistryValidatesCoordinatesButCannotExecuteHostCode() throws Exception {
+        RuleBindingExecutorRegistry planningRegistry = RuleBindingExecutorRegistry.planning(List.of(
+                new RuleImplementationRef("benefits:amount", "1.0.0")));
+        DecisionSlot calculationSlot = new DecisionSlot(
+                "calculation", DecisionStage.DOMAIN_DECISION, SlotCardinality.SINGLE,
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT);
+        DecisionBinding calculation = new DecisionBinding(
+                "calculation", "calculation", DecisionSource.PRODUCT, null,
+                RuleExecutorRef.java("benefits:amount", "1.0.0"), List.of(), 10, true,
+                null, null, List.of());
+        PublishedRuleSnapshot base = snapshot(false, "snapshot-java", null, 1);
+        PublishedRuleSnapshot javaSnapshot = new PublishedRuleSnapshot(
+                base.snapshotContractVersion(), base.snapshotKey(), base.tenantId(), base.environment(),
+                base.ownerServiceKey(), base.publicationRevision(), base.publishedAtUtc(), null,
+                base.requiredHostContractVersion(), base.validFromUtc(), null, base.sources(), base.approvals(),
+                new RuleSetDefinition(
+                        base.ruleSet().ref(), List.of("request"), List.of(calculationSlot), List.of(calculation),
+                        RuleRuntimeCompatibility.current(), RuleFailPolicy.FAIL_CLOSED));
+
+        CompiledRuleSnapshot compiled = new PraxisRuleSnapshotCompiler(planningRegistry)
+                .compile(javaSnapshot, "quickstart/1.0");
+        var result = new org.praxisplatform.rules.runtime.PraxisRuleSetEngine(planningRegistry)
+                .evaluate(compiled.plan(), JSON.createObjectNode().putObject("request"),
+                        "2026-07-13T15:00:00Z", "UTC");
+
+        assertEquals(RuleDecision.TECHNICAL_ERROR, result.decision());
+        assertEquals(List.of("IMPLEMENTATION_UNAVAILABLE"), result.reasonCodes());
     }
 
     private PublishedRuleSnapshot snapshot(
