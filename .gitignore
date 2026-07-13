@@ -1,4 +1,6 @@
 target/
+.flattened-pom.xml
+.m2repo/
 .idea/
 .vscode/
 *.iml
