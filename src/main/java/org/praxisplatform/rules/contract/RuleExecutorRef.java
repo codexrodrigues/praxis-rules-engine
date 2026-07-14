@@ -9,7 +9,8 @@ import java.util.Objects;
  * @param type executor family
  * @param implementationKey namespaced Java implementation key, for Java executors
  * @param implementationVersion exact executor or dialect version
- * @param expression canonical JSON Logic expression, for declarative executors
+ * @param expression canonical JSON Logic expression for declarative executors; JSON {@code null}
+ *     is normalized to absence for Java executors
  */
 public record RuleExecutorRef(
         RuleExecutorType type,
@@ -36,10 +37,11 @@ public record RuleExecutorRef(
             if (implementationKey == null || implementationKey.isBlank() || !implementationKey.contains(":")) {
                 throw new IllegalArgumentException("JAVA executor requires a namespaced implementationKey");
             }
-            if (expression != null) {
+            if (expression != null && !expression.isNull()) {
                 throw new IllegalArgumentException("JAVA executor cannot declare an expression");
             }
             implementationKey = implementationKey.trim();
+            expression = null;
         }
     }
 
