@@ -22,7 +22,7 @@ autoridade.
 | [P2F-ADR-09](p2f-adr-09-cache-and-hot-reload.md) | cache e hot reload | aceito |
 | [P2F-ADR-10](p2f-adr-10-transactions-batches-and-effects.md) | transação, lote, contexto e effects | aceito; statement, outbox, HTTP inbox e reconciliação neutros provados |
 | [P2F-ADR-11](p2f-adr-11-typed-transformations.md) | transformação tipada como proposta pura | aceito, publicado e consumido; materialização e auditoria redigida provadas no host |
-| P2F-ADR-12 | observation e redaction | contrato exercitado em QL-06; ADR formal pendente |
+| [P2F-ADR-12](p2f-adr-12-observation-redaction-and-retention.md) | observation, redaction e retenção | aceito; host sanitizado e ciclo de vida governado provados no Quickstart |
 
 ## Gate resultante
 
@@ -44,6 +44,11 @@ unidade transacional da materialização, preservando os digests canônicos do
 engine sem persistir os valores transformados. Esse gate específico está
 concluído no laboratório; não amplia a autoridade do engine nem libera regras
 Ergon.
+
+O ADR-12 preserva o resultado determinístico como única superfície do engine e
+coloca observação, acesso, legal hold e retenção no host. O Quickstart prova a
+allowlist QL-06 e uma fronteira SQL sem endpoint administrativo para os ledgers
+QL-08. Operação no ambiente corporativo-alvo continua gate separado.
 
 As fixtures e o checker focal vivem no `praxis-api-quickstart` em
 `src/test/resources/rule-lab/` e `RuleLabGoldenContractTest`. Contratos,

@@ -49,3 +49,8 @@ imutabilidade no PostgreSQL.
 O gate downstream específico do ADR-11 está concluído no laboratório. A
 mudança pertence ao host e não exige alteração, tag ou nova publicação do
 contrato puro `1.2` do engine.
+
+P2F-ADR-12 formaliza observation, redaction e retenção governada sem adicionar
+campos ao resultado puro. A prova de allowlist, métricas bounded, auditoria
+insert-only, legal hold e expurgo autorizado pertence ao Quickstart. Portanto,
+essa decisão também não exige tag nem nova publicação do engine.

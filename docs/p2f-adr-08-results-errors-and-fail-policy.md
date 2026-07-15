@@ -30,7 +30,8 @@ O envelope runtime-neutro implementado em QL-02 contém:
 - compatibilidade exata de engine/dialect/corpus e versões Java usadas;
 - fail policy declarada para aplicação pelo host.
 
-Duração, diagnostics, `observationRef` e redaction pertencem a P2F-ADR-12/QL-06
+Duração, diagnostics, `observationRef` e redaction pertencem a
+[P2F-ADR-12](p2f-adr-12-observation-redaction-and-retention.md)/QL-06
 porque tempo de parede não pode alterar o resultado determinístico do core.
 Snapshot pertence a QL-03. Calculation e `effectIntents` tipadas pertencem aos
 contratos de transformação/efeitos de QL-05; em QL-02 o output permanece dado
