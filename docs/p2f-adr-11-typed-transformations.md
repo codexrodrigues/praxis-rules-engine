@@ -1,7 +1,7 @@
 # P2F-ADR-11 — Transformações tipadas como propostas puras
 
 - Data: 2026-07-15
-- Estado: aceito no core; integração downstream pendente da próxima beta pública
+- Estado: aceito, publicado em `0.1.0-beta.12` e consumido pelo Quickstart
 - Classificação: arquitetural, transversal e contrato público
 - Owners: `praxis-rules-engine` (contrato e validação) e host consumidor (autorização e materialização)
 
@@ -70,6 +70,7 @@ tag. Nenhuma publicação é autorizada por este ADR.
 
 `TypedTransformationContractTest` prova imutabilidade dos facts, proveniência,
 tipos, ausência versus null, limites, conflitos, snapshot stale, raízes,
-dependência e executor confiável. O Quickstart só poderá fechar o gate de
-materialização depois que a versão contendo o contrato `1.2` estiver disponível
-no Maven Central; não é permitido copiar os tipos nem usar override Maven local.
+dependência e executor confiável. O Quickstart consumiu `0.1.0-beta.12` sem
+override local, validou allowlist/schema no adapter e persistiu o valor na
+transação existente. A auditoria append-only dos digests permanece gate
+corporativo do host, não responsabilidade do engine.

@@ -21,7 +21,7 @@ autoridade.
 | [P2F-ADR-08](p2f-adr-08-results-errors-and-fail-policy.md) | resultados, erros e fail policy | aceito |
 | [P2F-ADR-09](p2f-adr-09-cache-and-hot-reload.md) | cache e hot reload | aceito |
 | [P2F-ADR-10](p2f-adr-10-transactions-batches-and-effects.md) | transação, lote, contexto e effects | aceito; statement, outbox, HTTP inbox e reconciliação neutros provados |
-| [P2F-ADR-11](p2f-adr-11-typed-transformations.md) | transformação tipada como proposta pura | aceito no core; consumo downstream aguarda beta pública |
+| [P2F-ADR-11](p2f-adr-11-typed-transformations.md) | transformação tipada como proposta pura | aceito, publicado e consumido; auditoria durável do host pendente |
 | P2F-ADR-12 | observation e redaction | contrato exercitado em QL-06; ADR formal pendente |
 
 ## Gate resultante
