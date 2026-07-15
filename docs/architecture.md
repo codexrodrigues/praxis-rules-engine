@@ -49,6 +49,12 @@ Effects, autorizacao, schema governado, concorrencia e transacao permanecem no
 host. A decisao final usa os bindings terminais do DAG; um
 `ALLOW` intermediario nao converte um ramo terminal `NOT_APPLICABLE` em sucesso.
 
+Observacao, duracao, metricas, logs, auditoria, legal hold e retencao tambem
+permanecem fora do core, conforme
+[P2F-ADR-12](p2f-adr-12-observation-redaction-and-retention.md). O host projeta
+somente uma allowlist sanitizada e nunca devolve telemetria ao resultado
+deterministico.
+
 ## Evolucao aceita
 
 O pacote [ADRs da plataforma de regras](p2f-rule-platform-adrs.md) separa
