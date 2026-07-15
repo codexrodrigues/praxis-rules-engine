@@ -72,5 +72,11 @@ tag. Nenhuma publicação é autorizada por este ADR.
 tipos, ausência versus null, limites, conflitos, snapshot stale, raízes,
 dependência e executor confiável. O Quickstart consumiu `0.1.0-beta.12` sem
 override local, validou allowlist/schema no adapter e persistiu o valor na
-transação existente. A auditoria append-only dos digests permanece gate
-corporativo do host, não responsabilidade do engine.
+transação existente. O host também passou a persistir, na mesma transação, uma
+trilha append-only redigida com a identidade técnica e os digests canônicos da
+proposta. Replay não duplica evidência e rollback não deixa auditoria órfã.
+
+Essa evidência downstream fecha o gate de materialização do ADR-11 no
+laboratório sem mover autorização, persistência ou auditoria para o engine e
+sem exigir nova versão do artefato. Retenção governada, segregação operacional
+e autoridade em ambiente corporativo continuam responsabilidades do host.

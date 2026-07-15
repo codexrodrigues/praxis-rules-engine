@@ -21,7 +21,7 @@ autoridade.
 | [P2F-ADR-08](p2f-adr-08-results-errors-and-fail-policy.md) | resultados, erros e fail policy | aceito |
 | [P2F-ADR-09](p2f-adr-09-cache-and-hot-reload.md) | cache e hot reload | aceito |
 | [P2F-ADR-10](p2f-adr-10-transactions-batches-and-effects.md) | transação, lote, contexto e effects | aceito; statement, outbox, HTTP inbox e reconciliação neutros provados |
-| [P2F-ADR-11](p2f-adr-11-typed-transformations.md) | transformação tipada como proposta pura | aceito, publicado e consumido; auditoria durável do host pendente |
+| [P2F-ADR-11](p2f-adr-11-typed-transformations.md) | transformação tipada como proposta pura | aceito, publicado e consumido; materialização e auditoria redigida provadas no host |
 | P2F-ADR-12 | observation e redaction | contrato exercitado em QL-06; ADR formal pendente |
 
 ## Gate resultante
@@ -38,6 +38,12 @@ publicar métricas bounded, uma SPI interna de backlog/retenção segura e class
 falhas permanentes e transitórias do transporte HTTP, além de replay governado e auditado de
 dead-letter. Adapter corporativo real,
 inbox/audit, dashboards/alertas no ambiente-alvo e autoridade continuam gates de implementação.
+
+Para ADR-11, o Quickstart também provou auditoria append-only redigida na mesma
+unidade transacional da materialização, preservando os digests canônicos do
+engine sem persistir os valores transformados. Esse gate específico está
+concluído no laboratório; não amplia a autoridade do engine nem libera regras
+Ergon.
 
 As fixtures e o checker focal vivem no `praxis-api-quickstart` em
 `src/test/resources/rule-lab/` e `RuleLabGoldenContractTest`. Contratos,
