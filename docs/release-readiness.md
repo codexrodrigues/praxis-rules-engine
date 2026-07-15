@@ -27,19 +27,20 @@ local, e passou os cenários focais de `ALLOW`, `DENY`, `NOT_APPLICABLE` e
 
 A mesma linha compatível evoluiu para `0.1.0-beta.9` com snapshot imutável,
 `0.1.0-beta.10` com registry Java planning-only e `0.1.0-beta.11` com
-normalização de expressão nula em executor Java. A `beta.11` é a coordenada
-pública corrente para novos consumidores; a `beta.7` permanece explicitamente
-não recomendada.
+normalização de expressão nula em executor Java. A `beta.7` permanece
+explicitamente não recomendada.
 
-## Próxima beta — contrato de transformação tipada
+## Beta.12 — contrato de transformação tipada
 
 P2F-ADR-11 adiciona `TRANSFORMATION_INTENT` e propostas tipadas puras, elevando
 o engine contract para `1.2` sem alterar o dialeto JSON Logic. A classificação
 de versão é evolução aditiva da linha beta pública ativa: deve ser uma nova
 `0.1.0-beta.*`, não uma major. Construtores anteriores foram preservados.
 
-O core possui prova focal, mas a release ainda não está autorizada nem
-publicada. O gate seguinte é `mvn clean verify` em Java 21; depois, commit limpo
-em `main`, workflow oficial com `create_tag=true`, disponibilidade no Maven
-Central e smoke do Quickstart usando somente a coordenada pública. Até esse
-smoke, a materialização downstream permanece pendente.
+`0.1.0-beta.12` foi publicada pelo workflow oficial assinado e exposta no Maven
+Central em 2026-07-15. O Quickstart resolveu a coordenada em repositório Maven
+isolado, executou o engine contract `1.2` e provou transformação allowlisted,
+schema-bound e persistida na transação existente. A suíte QL-08 passou com 58
+testes e o CI amplo do host também passou. A lacuna downstream restante é
+auditoria append-only da identidade e dos digests da proposta; ela não exige
+alteração do contrato puro do engine.

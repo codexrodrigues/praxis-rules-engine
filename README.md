@@ -73,9 +73,10 @@ registry versionado e evaluator service-level estao publicados. O repositorio
 canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para
 `main` passa por `mvn clean verify`. O POM de desenvolvimento permanece
 `0.0.1-SNAPSHOT`; a coordenada publica atual e
-`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.11`, com engine contract
-`1.1`. O Praxis API Quickstart consumiu a linha publica diretamente do Maven
-Central. A `0.1.0-beta.7` nao deve ser adotada por hosts porque consolidava
+`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.12`, com engine contract
+`1.2`. O Praxis API Quickstart consumiu a coordenada diretamente do Maven
+Central e provou proposta tipada, allowlist/schema no host e persistencia
+transacional. A `0.1.0-beta.7` nao deve ser adotada por hosts porque consolidava
 incorretamente `ALLOW` intermediario com `NOT_APPLICABLE` terminal.
 
 Consulte [architecture.md](docs/architecture.md), [operator-conformance-matrix.md](docs/operator-conformance-matrix.md), [release-readiness.md](docs/release-readiness.md) e o [pacote de ADRs da plataforma de regras](docs/p2f-rule-platform-adrs.md).
