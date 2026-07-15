@@ -18,6 +18,8 @@ import org.praxisplatform.rules.contract.RuleEvaluationResult;
 import org.praxisplatform.rules.contract.RuleImplementationRef;
 import org.praxisplatform.rules.contract.RuleExecutorResult;
 import org.praxisplatform.rules.contract.RuleExecutorType;
+import org.praxisplatform.rules.contract.TransformationDraft;
+import org.praxisplatform.rules.contract.TypedTransformationProposal;
 import org.praxisplatform.rules.jsonlogic.PraxisJsonLogicEngine;
 import org.praxisplatform.rules.jsonlogic.PraxisJsonLogicException;
 import org.praxisplatform.rules.jsonlogic.internal.PraxisPath;
@@ -96,10 +98,12 @@ public final class PraxisRuleSetEngine {
 
         List<RuleBindingResult> bindingResults = new ArrayList<>();
         Map<String, RuleBindingResult> resultsByBinding = new LinkedHashMap<>();
+        java.util.Set<String> transformationKeys = new java.util.HashSet<>();
+        java.util.Set<String> transformationTargets = new java.util.HashSet<>();
         boolean anyInconclusive = false;
         for (DecisionBinding binding : plan.orderedBindings()) {
             DecisionSlot slot = plan.slotsByKey().get(binding.slotKey());
-            RuleBindingResult bindingResult = effectGateResult(
+            RuleBindingResult bindingResult = intentGateResult(
                     slot, binding, anyInconclusive);
             if (bindingResult == null) {
                 bindingResult = dependencyResult(slot, binding, resultsByBinding);
@@ -112,6 +116,17 @@ public final class PraxisRuleSetEngine {
                         facts,
                         nowUtc,
                         userTimeZone);
+            }
+            boolean transformationConflict = bindingResult.transformations().stream().anyMatch(proposal ->
+                    !transformationKeys.add(proposal.proposalKey())
+                            || !transformationTargets.add(proposal.targetPath()));
+            if (transformationConflict) {
+                bindingResult = bindingResult(
+                        slot,
+                        binding,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of("TRANSFORMATION_CONFLICT"),
+                        null);
             }
             bindingResults.add(bindingResult);
             resultsByBinding.put(binding.bindingKey(), bindingResult);
@@ -156,11 +171,12 @@ public final class PraxisRuleSetEngine {
                 factsDigest);
     }
 
-    private RuleBindingResult effectGateResult(
+    private RuleBindingResult intentGateResult(
             DecisionSlot slot,
             DecisionBinding binding,
             boolean anyInconclusive) {
-        if (slot.stage() != DecisionStage.EFFECT_INTENT) {
+        if (slot.stage() != DecisionStage.EFFECT_INTENT
+                && slot.stage() != DecisionStage.TRANSFORMATION_INTENT) {
             return null;
         }
         if (anyInconclusive) {
@@ -281,6 +297,54 @@ public final class PraxisRuleSetEngine {
                         List.of("EFFECT_INTENT_DECISION_INVALID"),
                         null);
             }
+            if (slot.stage() == DecisionStage.TRANSFORMATION_INTENT
+                    && (executorResult.decision() == RuleDecision.DENY
+                            || executorResult.decision() == RuleDecision.TECHNICAL_ERROR)) {
+                return bindingResult(
+                        slot,
+                        binding,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of("TRANSFORMATION_DECISION_INVALID"),
+                        null);
+            }
+            if (slot.stage() == DecisionStage.TRANSFORMATION_INTENT
+                    && executorResult.decision() != RuleDecision.ALLOW
+                    && !executorResult.transformations().isEmpty()) {
+                return bindingResult(
+                        slot,
+                        binding,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of("TRANSFORMATION_DECISION_INVALID"),
+                        null);
+            }
+            if (slot.stage() != DecisionStage.TRANSFORMATION_INTENT
+                    && !executorResult.transformations().isEmpty()) {
+                return bindingResult(
+                        slot,
+                        binding,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of("TRANSFORMATION_STAGE_INVALID"),
+                        null);
+            }
+            if (slot.stage() == DecisionStage.TRANSFORMATION_INTENT
+                    && executorResult.output() != null) {
+                return bindingResult(
+                        slot,
+                        binding,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of("TRANSFORMATION_OUTPUT_INVALID"),
+                        null);
+            }
+            if (slot.stage() == DecisionStage.TRANSFORMATION_INTENT
+                    && executorResult.decision() == RuleDecision.ALLOW
+                    && executorResult.transformations().isEmpty()) {
+                return bindingResult(
+                        slot,
+                        binding,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of("TRANSFORMATION_PROPOSAL_REQUIRED"),
+                        null);
+            }
             try {
                 jsonLogicEngine.validateResultValue(executorResult.output(), JsonLogicLimits.DEFAULT);
             } catch (PraxisJsonLogicException exception) {
@@ -291,12 +355,25 @@ public final class PraxisRuleSetEngine {
                         List.of("IMPLEMENTATION_RESULT_LIMIT_EXCEEDED"),
                         null);
             }
+            List<TypedTransformationProposal> transformations;
+            try {
+                transformations = enrichTransformations(
+                        plan, binding, facts, executorResult.transformations());
+            } catch (IllegalArgumentException | PraxisJsonLogicException exception) {
+                return bindingResult(
+                        slot,
+                        binding,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of("TRANSFORMATION_PROPOSAL_INVALID"),
+                        null);
+            }
             return bindingResult(
                     slot,
                     binding,
                     executorResult.decision(),
                     executorResult.reasonCodes(),
-                    executorResult.output());
+                    executorResult.output(),
+                    transformations);
         } catch (RuntimeException exception) {
             return bindingResult(
                     slot,
@@ -313,13 +390,87 @@ public final class PraxisRuleSetEngine {
             RuleDecision decision,
             List<String> reasonCodes,
             JsonNode output) {
+        return bindingResult(slot, binding, decision, reasonCodes, output, List.of());
+    }
+
+    private RuleBindingResult bindingResult(
+            DecisionSlot slot,
+            DecisionBinding binding,
+            RuleDecision decision,
+            List<String> reasonCodes,
+            JsonNode output,
+            List<TypedTransformationProposal> transformations) {
         return new RuleBindingResult(
                 binding.bindingKey(),
                 binding.slotKey(),
                 slot.stage(),
                 decision,
                 normalizedReasonCodes(reasonCodes),
-                output);
+                output,
+                transformations);
+    }
+
+    private List<TypedTransformationProposal> enrichTransformations(
+            RuleDecisionPlan plan,
+            DecisionBinding binding,
+            JsonNode facts,
+            List<TransformationDraft> drafts) {
+        java.util.Set<String> keys = new java.util.HashSet<>();
+        java.util.Set<String> targets = new java.util.HashSet<>();
+        List<TypedTransformationProposal> proposals = new ArrayList<>();
+        for (TransformationDraft draft : drafts) {
+            String targetRoot = draft.targetPath().split("\\.", 2)[0];
+            if (!plan.definition().availableRoots().contains(targetRoot)) {
+                throw new IllegalArgumentException("Transformation target root is not available to the RuleSet");
+            }
+            if (!keys.add(draft.proposalKey()) || !targets.add(draft.targetPath())) {
+                throw new IllegalArgumentException("Transformation proposal identity or target is duplicated");
+            }
+            if (draft.before().present()) {
+                jsonLogicEngine.validateResultValue(draft.before().value(), JsonLogicLimits.DEFAULT);
+            }
+            if (draft.after().present()) {
+                jsonLogicEngine.validateResultValue(draft.after().value(), JsonLogicLimits.DEFAULT);
+            }
+            validateBeforeSnapshot(draft, facts);
+            proposals.add(new TypedTransformationProposal(
+                    draft.proposalKey(),
+                    binding.bindingKey(),
+                    binding.slotKey(),
+                    draft.targetPath(),
+                    draft.schemaRef(),
+                    draft.operation(),
+                    draft.before(),
+                    draft.after(),
+                    draft.before().digest(),
+                    draft.after().digest(),
+                    draft.reasonCode()));
+        }
+        return List.copyOf(proposals);
+    }
+
+    private void validateBeforeSnapshot(TransformationDraft draft, JsonNode facts) {
+        JsonNode current = facts;
+        boolean present = true;
+        for (String segment : PraxisPath.parse(draft.targetPath())) {
+            if (current == null || !current.isObject() || !current.has(segment)) {
+                present = false;
+                current = null;
+                break;
+            }
+            current = current.get(segment);
+        }
+        if (draft.before().present() != present
+                || (present && !sameSnapshotValue(draft.before().value(), current))) {
+            throw new IllegalArgumentException("Transformation before value does not match the facts snapshot");
+        }
+    }
+
+    private boolean sameSnapshotValue(JsonNode expected, JsonNode current) {
+        if (expected.isNumber() && current.isNumber()) {
+            return expected.decimalValue().compareTo(current.decimalValue()) == 0;
+        }
+        return expected.equals(current);
     }
 
     private RuleEvaluationResult result(
@@ -337,7 +488,12 @@ public final class PraxisRuleSetEngine {
                 factsDigest,
                 plan.definition().compatibility(),
                 implementationRefs(plan),
-                plan.definition().failPolicy());
+                plan.definition().failPolicy(),
+                decision == RuleDecision.ALLOW
+                        ? bindingResults.stream()
+                                .flatMap(item -> item.transformations().stream())
+                                .toList()
+                        : List.of());
     }
 
     private List<RuleImplementationRef> implementationRefs(RuleDecisionPlan plan) {

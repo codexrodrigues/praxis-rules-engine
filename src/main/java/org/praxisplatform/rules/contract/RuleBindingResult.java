@@ -13,6 +13,7 @@ import java.util.Objects;
  * @param decision binding outcome
  * @param reasonCodes stable machine-readable reasons
  * @param output optional pure calculation or intent data
+ * @param transformations validated typed transformation proposals with binding provenance
  */
 public record RuleBindingResult(
         String bindingKey,
@@ -20,7 +21,8 @@ public record RuleBindingResult(
         DecisionStage stage,
         RuleDecision decision,
         List<String> reasonCodes,
-        JsonNode output) {
+        JsonNode output,
+        List<TypedTransformationProposal> transformations) {
 
     /** Copies all result values before they cross the engine boundary. */
     public RuleBindingResult {
@@ -30,6 +32,26 @@ public record RuleBindingResult(
         decision = Objects.requireNonNull(decision, "decision is required");
         reasonCodes = reasonCodes == null ? List.of() : List.copyOf(reasonCodes);
         output = output == null ? null : output.deepCopy();
+        transformations = transformations == null ? List.of() : List.copyOf(transformations);
+    }
+
+    /**
+     * Creates a binding result without transformation proposals.
+     * @param bindingKey stable binding identity
+     * @param slotKey stable slot identity
+     * @param stage resolved execution stage
+     * @param decision binding outcome
+     * @param reasonCodes stable machine-readable reasons
+     * @param output optional pure calculation or intent data
+     */
+    public RuleBindingResult(
+            String bindingKey,
+            String slotKey,
+            DecisionStage stage,
+            RuleDecision decision,
+            List<String> reasonCodes,
+            JsonNode output) {
+        this(bindingKey, slotKey, stage, decision, reasonCodes, output, List.of());
     }
 
     /**

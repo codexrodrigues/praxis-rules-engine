@@ -15,6 +15,7 @@ import java.util.Objects;
  * @param compatibility exact engine and dialect baseline used
  * @param implementationRefs exact trusted Java implementations used by the plan
  * @param failPolicy host-enforced failure policy
+ * @param transformationProposals ordered typed proposals; the engine never applies them
  */
 public record RuleEvaluationResult(
         RuleDecision decision,
@@ -25,7 +26,8 @@ public record RuleEvaluationResult(
         String factsDigest,
         RuleRuntimeCompatibility compatibility,
         List<RuleImplementationRef> implementationRefs,
-        RuleFailPolicy failPolicy) {
+        RuleFailPolicy failPolicy,
+        List<TypedTransformationProposal> transformationProposals) {
 
     /** Copies ordered outcomes and requires the complete evaluated identity. */
     public RuleEvaluationResult {
@@ -42,5 +44,34 @@ public record RuleEvaluationResult(
         compatibility = Objects.requireNonNull(compatibility, "compatibility is required");
         implementationRefs = implementationRefs == null ? List.of() : List.copyOf(implementationRefs);
         failPolicy = Objects.requireNonNull(failPolicy, "failPolicy is required");
+        transformationProposals = transformationProposals == null
+                ? List.of()
+                : List.copyOf(transformationProposals);
+    }
+
+    /**
+     * Creates an evaluation result without typed transformation proposals.
+     * @param decision consolidated five-state outcome
+     * @param ruleSetRef exact evaluated version
+     * @param planDigest digest of the compiled plan
+     * @param bindingResults ordered binding outcomes
+     * @param reasonCodes consolidated stable reasons
+     * @param factsDigest canonical facts digest, or {@code null} for invalid input
+     * @param compatibility exact engine and dialect baseline used
+     * @param implementationRefs exact trusted Java implementations used by the plan
+     * @param failPolicy host-enforced failure policy
+     */
+    public RuleEvaluationResult(
+            RuleDecision decision,
+            RuleSetRef ruleSetRef,
+            String planDigest,
+            List<RuleBindingResult> bindingResults,
+            List<String> reasonCodes,
+            String factsDigest,
+            RuleRuntimeCompatibility compatibility,
+            List<RuleImplementationRef> implementationRefs,
+            RuleFailPolicy failPolicy) {
+        this(decision, ruleSetRef, planDigest, bindingResults, reasonCodes, factsDigest,
+                compatibility, implementationRefs, failPolicy, List.of());
     }
 }
