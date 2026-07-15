@@ -22,6 +22,8 @@ public enum RulePlanIssueCode {
     PLAN_EXPRESSION_INVALID,
     /** Required trusted Java implementation is absent. */
     PLAN_IMPLEMENTATION_UNAVAILABLE,
+    /** A customer Java extension lacks externally verified allowlist and signature evidence. */
+    PLAN_EXTENSION_TRUST_INVALID,
     /** RuleSet contract, dialect, corpus, or implementation version is incompatible. */
     PLAN_COMPATIBILITY_INVALID,
     /** Plan size exceeds deterministic compiler limits. */

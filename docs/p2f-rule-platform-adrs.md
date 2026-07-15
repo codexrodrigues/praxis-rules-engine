@@ -15,7 +15,7 @@ autoridade.
 | [P2F-ADR-02](p2f-adr-02-identity-and-lifecycles.md) | identidade e lifecycles separados | aceito |
 | [P2F-ADR-03](p2f-adr-03-composition-and-overrides.md) | composição e override | aceito |
 | [P2F-ADR-04](p2f-adr-04-decision-plan-and-dag.md) | stages, DAG e short-circuit | aceito |
-| P2F-ADR-05 | protected rules e extensões assinadas | requerido antes de plugins |
+| [P2F-ADR-05](p2f-adr-05-protected-extensions.md) | protected rules e extensões assinadas | aceito no engine contract `1.3`; prova downstream pendente |
 | [P2F-ADR-06](p2f-adr-06-json-logic-binding.md) | binding ao dialect JSON Logic | aceito |
 | [P2F-ADR-07](p2f-adr-07-snapshot-etag-and-rollback.md) | snapshot, ETag e rollback | aceito |
 | [P2F-ADR-08](p2f-adr-08-results-errors-and-fail-policy.md) | resultados, erros e fail policy | aceito |
@@ -26,7 +26,7 @@ autoridade.
 
 ## Gate resultante
 
-Os ADRs 01, 02, 03, 04, 06, 07, 08 e 09 liberaram QL-03: envelope imutável no
+Os ADRs 01–09 liberaram QL-03: envelope imutável no
 engine, persistência/head/rollback no Config Starter e adapter last-known-good
 no host. O ADR-10 formaliza a fronteira já exercitada em QL-05/QL-08: o engine
 planeja intents puros e o host possui contexto, idempotência, transação, lote,
@@ -56,3 +56,10 @@ planner e evaluator do core de QL-02 foram publicados e consumidos pelo
 Quickstart. QL-03 adicionou o envelope de snapshot sem mover persistência, ETag
 ou lifecycle para o engine. QL-05–QL-08 preservaram essa ownership boundary;
 nenhum ADR autoriza regra Ergon, preflight, autoridade ou desligamento legado.
+
+O ADR-05 fecha o default-deny de extensões Java de cliente: protected guards
+continuam `FORBIDDEN`, e um registry só admite `CUSTOMER + JAVA` quando o
+pipeline/host fornece attestation externa do artefato assinado e allowlisted.
+O core não verifica criptografia nem oferece sandbox; ele vincula a evidência ao
+plano e ao resultado determinísticos. Catálogo de trust do control plane e prova
+downstream pública permanecem gates separados.

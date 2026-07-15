@@ -18,6 +18,7 @@ import org.praxisplatform.rules.contract.DecisionSource;
 import org.praxisplatform.rules.contract.DecisionStage;
 import org.praxisplatform.rules.contract.OverridePolicy;
 import org.praxisplatform.rules.contract.RuleExecutorType;
+import org.praxisplatform.rules.contract.RuleImplementationRef;
 import org.praxisplatform.rules.contract.RuleDecision;
 import org.praxisplatform.rules.contract.RuleRuntimeCompatibility;
 import org.praxisplatform.rules.contract.RuleSetDefinition;
@@ -73,7 +74,12 @@ public final class PraxisRulePlanCompiler {
         Map<String, DecisionBinding> bindings = indexEnabledBindings(definition.bindings());
         validateBindings(definition, slots, bindings);
         List<DecisionBinding> ordered = topologicalOrder(slots, bindings);
-        return new RuleDecisionPlan(definition, ordered, slots, digest(definition, ordered));
+        return new RuleDecisionPlan(
+                definition,
+                ordered,
+                slots,
+                implementationRefs(ordered),
+                digest(definition, ordered));
     }
 
     private void validateCompatibility(RuleSetDefinition definition) {
@@ -284,6 +290,24 @@ public final class PraxisRulePlanCompiler {
                                 + binding.executor().implementationVersion(),
                         binding.bindingKey());
             }
+            boolean trustedExtension = executorRegistry.isTrustedExtension(
+                    binding.executor().implementationKey(),
+                    binding.executor().implementationVersion());
+            if (binding.source() == DecisionSource.CUSTOMER && !trustedExtension) {
+                throw failure(
+                        RulePlanIssueCode.PLAN_EXTENSION_TRUST_INVALID,
+                        "Customer Java extension is not signed and allowlisted: "
+                                + binding.executor().implementationKey()
+                                + "@"
+                                + binding.executor().implementationVersion(),
+                        binding.bindingKey());
+            }
+            if (binding.source() != DecisionSource.CUSTOMER && trustedExtension) {
+                throw failure(
+                        RulePlanIssueCode.PLAN_EXTENSION_TRUST_INVALID,
+                        "Attested customer extension cannot be relabeled as " + binding.source(),
+                        binding.bindingKey());
+            }
             return;
         }
         try {
@@ -416,6 +440,7 @@ public final class PraxisRulePlanCompiler {
                     .append(binding.executor().type()).append('|')
                     .append(binding.executor().implementationKey()).append('|')
                     .append(binding.executor().implementationVersion()).append('|')
+                    .append(implementationTrustMaterial(binding)).append('|')
                     .append(PraxisCanonicalJson.canonicalize(binding.executor().expression())).append('|')
                     .append(binding.dependsOn()).append('|')
                     .append(binding.order()).append('|')
@@ -424,6 +449,34 @@ public final class PraxisRulePlanCompiler {
                     .append(binding.requiredFactPaths()).append(';');
         }
         return PraxisCanonicalJson.sha256Utf8(canonical.toString());
+    }
+
+    private List<RuleImplementationRef> implementationRefs(List<DecisionBinding> ordered) {
+        return ordered.stream()
+                .map(DecisionBinding::executor)
+                .filter(executor -> executor.type() == RuleExecutorType.JAVA)
+                .map(executor -> executorRegistry.implementationRef(executor.implementationKey()))
+                .distinct()
+                .sorted(Comparator
+                        .comparing(RuleImplementationRef::implementationKey)
+                        .thenComparing(RuleImplementationRef::implementationVersion))
+                .toList();
+    }
+
+    private String implementationTrustMaterial(DecisionBinding binding) {
+        if (binding.executor().type() != RuleExecutorType.JAVA) {
+            return "DECLARATIVE";
+        }
+        var implementation = executorRegistry.implementationRef(binding.executor().implementationKey());
+        if (implementation.extensionTrust() == null) {
+            return implementation.implementationKey() + "@" + implementation.implementationVersion() + "|BUILT_IN";
+        }
+        var trust = implementation.extensionTrust();
+        return implementation.implementationKey() + "@" + implementation.implementationVersion()
+                + "|" + trust.artifactSha256()
+                + "|" + trust.signatureIdentity()
+                + "|" + trust.trustPolicyKey()
+                + "|" + trust.verificationEvidenceSha256();
     }
 
     private RulePlanException failure(RulePlanIssueCode code, String message, String bindingKey) {

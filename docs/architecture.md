@@ -40,6 +40,13 @@ Slots singulares usam `SINGLE_RESULT`; slots multiplos declaram explicitamente
 `DENY_OVERRIDES`. Chaves e versoes de executores Java sao exatas. O plano fixa
 engine contract, dialect e SHA-256 do corpus, rejeita roots desconhecidos,
 ciclos, dependencias futuras, fan-out excessivo e overrides incompativeis.
+Extensoes Java de cliente tambem exigem attestation externa de artefato,
+assinante, politica de trust e evidencia de verificacao; essa attestation entra
+no digest do plano e no resultado. Protected guards permanecem inacessiveis a
+qualquer binding de cliente. O pipeline/host verifica assinatura e allowlist,
+pois o core puro nao executa I/O nem funciona como sandbox.
+O evaluator compara as coordenadas attestadas carregadas pelo plano com o
+registry executavel e falha antes da chamada quando houver substituicao.
 Facts e outputs Java atravessam os mesmos limites estruturais do runtime JSON
 Logic. `EFFECT_INTENT` e `TRANSFORMATION_INTENT` nao executam enquanto uma
 decisao anterior estiver inconclusiva e exigem dependencia explicita. O segundo

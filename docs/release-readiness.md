@@ -54,3 +54,18 @@ P2F-ADR-12 formaliza observation, redaction e retenção governada sem adicionar
 campos ao resultado puro. A prova de allowlist, métricas bounded, auditoria
 insert-only, legal hold e expurgo autorizado pertence ao Quickstart. Portanto,
 essa decisão também não exige tag nem nova publicação do engine.
+
+## Beta.13 — protected extensions
+
+P2F-ADR-05 introduz `RuleExtensionTrust`, exige attestation externa para todo
+binding `CUSTOMER + JAVA`, inclui a evidência no digest do plano e no resultado
+e mantém protected guards `FORBIDDEN` mesmo para artefatos assinados. O engine
+contract passa a `1.3`; construtores de implementações built-in permanecem
+compatíveis.
+
+Classificação de versão: evolução aditiva da linha pública beta ativa,
+`0.1.0-beta.13`, não nova major. A publicação só pode ocorrer após `clean verify`
+e merge em `main`, pelo `workflow_dispatch` oficial com `create_tag=true`. A
+coordenada somente será recomendada depois de prova downstream pública no
+Quickstart e de um catálogo externo de trust no control plane; o próprio
+snapshot nunca pode gerar sua allowlist.

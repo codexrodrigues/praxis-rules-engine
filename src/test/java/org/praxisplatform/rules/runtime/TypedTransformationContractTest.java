@@ -212,8 +212,8 @@ class TypedTransformationContractTest {
     }
 
     @Test
-    void publishesTheTransformationContractAsEngineBaselineOnePointTwo() {
-        assertEquals("1.2", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
+    void publishesTheProtectedExtensionContractAsEngineBaselineOnePointThree() {
+        assertEquals("1.3", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
     }
 
     private RuleBindingExecutorRegistry registry(AtomicInteger executions, List<TransformationDraft> drafts) {
