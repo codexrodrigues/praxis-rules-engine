@@ -41,6 +41,11 @@ de versão é evolução aditiva da linha beta pública ativa: deve ser uma nova
 Central em 2026-07-15. O Quickstart resolveu a coordenada em repositório Maven
 isolado, executou o engine contract `1.2` e provou transformação allowlisted,
 schema-bound e persistida na transação existente. A suíte QL-08 passou com 58
-testes e o CI amplo do host também passou. A lacuna downstream restante é
-auditoria append-only da identidade e dos digests da proposta; ela não exige
-alteração do contrato puro do engine.
+testes e o CI amplo do host também passou. Em seguida, o host adicionou uma
+auditoria append-only redigida da identidade e dos digests canônicos da
+proposta, com provas de replay sem duplicação, rollback sem registro órfão e
+imutabilidade no PostgreSQL.
+
+O gate downstream específico do ADR-11 está concluído no laboratório. A
+mudança pertence ao host e não exige alteração, tag ou nova publicação do
+contrato puro `1.2` do engine.
