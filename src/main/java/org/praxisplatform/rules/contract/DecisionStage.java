@@ -8,6 +8,8 @@ public enum DecisionStage {
     DOMAIN_DECISION,
     /** Checks that depend on an otherwise successful domain decision. */
     POST_DECISION,
+    /** Pure typed before/after proposals for a host-owned write-model adapter. */
+    TRANSFORMATION_INTENT,
     /** Pure creation of typed intent data; never execution of an effect. */
     EFFECT_INTENT
 }

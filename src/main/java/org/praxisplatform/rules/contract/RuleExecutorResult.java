@@ -10,17 +10,30 @@ import java.util.Objects;
  * @param decision binding-level outcome
  * @param reasonCodes stable machine-readable reason codes
  * @param output optional typed calculation or intent data
+ * @param transformations typed write-model proposals, only valid in transformation-intent stage
  */
 public record RuleExecutorResult(
         RuleDecision decision,
         List<String> reasonCodes,
-        JsonNode output) {
+        JsonNode output,
+        List<TransformationDraft> transformations) {
 
     /** Copies mutable values and requires a complete decision. */
     public RuleExecutorResult {
         decision = Objects.requireNonNull(decision, "decision is required");
         reasonCodes = reasonCodes == null ? List.of() : List.copyOf(reasonCodes);
         output = output == null ? null : output.deepCopy();
+        transformations = transformations == null ? List.of() : List.copyOf(transformations);
+    }
+
+    /**
+     * Creates a result without transformation proposals.
+     * @param decision binding-level outcome
+     * @param reasonCodes stable machine-readable reason codes
+     * @param output optional pure calculation or intent data
+     */
+    public RuleExecutorResult(RuleDecision decision, List<String> reasonCodes, JsonNode output) {
+        this(decision, reasonCodes, output, List.of());
     }
 
     /**
@@ -37,7 +50,7 @@ public record RuleExecutorResult(
      * @return allow result
      */
     public static RuleExecutorResult allow() {
-        return new RuleExecutorResult(RuleDecision.ALLOW, List.of(), null);
+        return new RuleExecutorResult(RuleDecision.ALLOW, List.of(), null, List.of());
     }
 
     /**
@@ -47,6 +60,6 @@ public record RuleExecutorResult(
      * @return immutable result
      */
     public static RuleExecutorResult of(RuleDecision decision, String reasonCode) {
-        return new RuleExecutorResult(decision, List.of(reasonCode), null);
+        return new RuleExecutorResult(decision, List.of(reasonCode), null, List.of());
     }
 }

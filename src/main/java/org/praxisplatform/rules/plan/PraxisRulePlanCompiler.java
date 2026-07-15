@@ -169,10 +169,23 @@ public final class PraxisRulePlanCompiler {
                         "Effect-intent binding must use NOT_APPLICABLE when its condition is false",
                         binding.bindingKey());
             }
+            if (slot.stage() == DecisionStage.TRANSFORMATION_INTENT
+                    && binding.executor().type() != RuleExecutorType.JAVA) {
+                throw failure(
+                        RulePlanIssueCode.PLAN_STAGE_INVALID,
+                        "Transformation-intent binding requires a trusted Java executor",
+                        binding.bindingKey());
+            }
             if (slot.stage() == DecisionStage.EFFECT_INTENT && binding.dependsOn().isEmpty()) {
                 throw failure(
                         RulePlanIssueCode.PLAN_STAGE_INVALID,
                         "Effect-intent binding requires an explicit decision dependency",
+                        binding.bindingKey());
+            }
+            if (slot.stage() == DecisionStage.TRANSFORMATION_INTENT && binding.dependsOn().isEmpty()) {
+                throw failure(
+                        RulePlanIssueCode.PLAN_STAGE_INVALID,
+                        "Transformation-intent binding requires an explicit decision dependency",
                         binding.bindingKey());
             }
             validateComposition(binding, slot);

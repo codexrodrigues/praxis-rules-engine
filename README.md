@@ -4,7 +4,11 @@ Core Java 21 puro, embarcavel e deterministico para o dialeto JSON Logic da plat
 
 ## Responsabilidade
 
-O modulo valida e avalia expressoes, compila `RuleSetDefinition` em DAG imutavel, resolve bindings JSON Logic ou Java puro, consolida decisoes em cinco estados e publica digests e coordenadas de compatibilidade. Ele nao possui Spring, persistencia, endpoints, tenant registry, snapshots, workflow, efeitos, HADES, Oracle ou regras Ergon.
+O modulo valida e avalia expressoes, compila `RuleSetDefinition` e snapshots
+imutaveis em DAGs deterministicas, resolve bindings JSON Logic ou Java puro,
+consolida decisoes em cinco estados e publica digests e coordenadas de
+compatibilidade. Ele nao possui Spring, persistencia, endpoints, tenant store,
+head mutavel, workflow, execucao de efeitos, HADES, Oracle ou regras Ergon.
 
 O owner normativo do dialeto e hoje `@praxisui/core`; o JAR e o owner do runtime Java. Mudancas de semantica exigem RFC, runtime TypeScript, runtime Java e corpus no mesmo ciclo.
 
@@ -43,6 +47,13 @@ O resultado preserva `DENY`, `NOT_APPLICABLE`, `INCONCLUSIVE` e
 `TECHNICAL_ERROR` sem colapsa-los em boolean, inclui `planDigest`, `factsDigest`,
 baseline de engine/dialect e versoes das implementacoes Java utilizadas.
 
+Transformacoes de write model usam `TRANSFORMATION_INTENT`: o executor Java
+propoe valores `before`/`after` tipados e o engine valida destino, schema ref,
+snapshot, limites, conflitos e proveniencia. O resultado e apenas uma proposta;
+autorizacao, validacao contra o schema governado, ETag, transacao, persistencia e
+auditoria pertencem ao host. Veja a
+[P2F-ADR-11](docs/p2f-adr-11-typed-transformations.md).
+
 Operadores temporais exigem `nowUtc` e `userTimeZone`. Contextos multi-root exigem paths qualificados. Operadores de host precisam de namespace e nao podem colidir com operadores nativos ou Praxis.
 
 ## Build
@@ -57,6 +68,14 @@ Maven 3.9+ e Java exatamente 21 sao impostos pelo Enforcer. O build gera JAR bin
 
 ## Estado e ownership
 
-O runtime JSON Logic, contratos RuleSet, planner deterministico, registry versionado e evaluator service-level estao publicados. O repositorio canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para `main` passa por `mvn clean verify`. O POM de desenvolvimento permanece `0.0.1-SNAPSHOT`; a coordenada publica atual e `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.8`, com engine contract `1.1`. O smoke service-level do Praxis API Quickstart resolveu essa coordenada diretamente do Maven Central. A `0.1.0-beta.7` nao deve ser adotada por hosts porque consolidava incorretamente `ALLOW` intermediario com `NOT_APPLICABLE` terminal.
+O runtime JSON Logic, contratos RuleSet/snapshot, planner deterministico,
+registry versionado e evaluator service-level estao publicados. O repositorio
+canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para
+`main` passa por `mvn clean verify`. O POM de desenvolvimento permanece
+`0.0.1-SNAPSHOT`; a coordenada publica atual e
+`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.11`, com engine contract
+`1.1`. O Praxis API Quickstart consumiu a linha publica diretamente do Maven
+Central. A `0.1.0-beta.7` nao deve ser adotada por hosts porque consolidava
+incorretamente `ALLOW` intermediario com `NOT_APPLICABLE` terminal.
 
 Consulte [architecture.md](docs/architecture.md), [operator-conformance-matrix.md](docs/operator-conformance-matrix.md), [release-readiness.md](docs/release-readiness.md) e o [pacote de ADRs da plataforma de regras](docs/p2f-rule-platform-adrs.md).

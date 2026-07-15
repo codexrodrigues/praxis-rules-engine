@@ -8,8 +8,8 @@
 - validacao usa os descriptors publicados para aridade e disponibilidade; o `operatorCatalog` do corpus compartilhado bloqueia drift de nome, origem e aridade entre Java e TypeScript;
 - paths, regex e limites falham com codigos estaveis;
 - os contratos runtime-neutros, planner e evaluator de QL-02 pertencem a este
-  modulo conforme [P2F-ADR-01](p2f-adr-01-runtime-contract-ownership.md); a
-  release publica atual ainda nao os contem;
+  modulo conforme [P2F-ADR-01](p2f-adr-01-runtime-contract-ownership.md) e ja
+  integram a linha beta publica;
 - envelope governado de snapshot, approval, ETag, head ativo e rollback
   permanecem no `praxis-config-starter`; contratos Ergon nao pertencem a este
   modulo.
@@ -41,9 +41,12 @@ Slots singulares usam `SINGLE_RESULT`; slots multiplos declaram explicitamente
 engine contract, dialect e SHA-256 do corpus, rejeita roots desconhecidos,
 ciclos, dependencias futuras, fan-out excessivo e overrides incompativeis.
 Facts e outputs Java atravessam os mesmos limites estruturais do runtime JSON
-Logic. `EFFECT_INTENT` nao executa enquanto a decisao anterior nao puder ser
-consolidada como `ALLOW`, exige dependencia explicita e o engine nunca
-materializa o efeito. A decisao final usa os bindings terminais do DAG; um
+Logic. `EFFECT_INTENT` e `TRANSFORMATION_INTENT` nao executam enquanto uma
+decisao anterior estiver inconclusiva e exigem dependencia explicita. O segundo
+aceita somente executor Java confiavel, valida propostas tipadas contra o
+snapshot e as raizes declaradas, mas nunca altera facts nem materializa writes.
+Effects, autorizacao, schema governado, concorrencia e transacao permanecem no
+host. A decisao final usa os bindings terminais do DAG; um
 `ALLOW` intermediario nao converte um ramo terminal `NOT_APPLICABLE` em sucesso.
 
 ## Evolucao aceita
