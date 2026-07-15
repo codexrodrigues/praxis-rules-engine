@@ -47,6 +47,13 @@ O resultado preserva `DENY`, `NOT_APPLICABLE`, `INCONCLUSIVE` e
 `TECHNICAL_ERROR` sem colapsa-los em boolean, inclui `planDigest`, `factsDigest`,
 baseline de engine/dialect e versoes das implementacoes Java utilizadas.
 
+Extensoes Java de cliente falham por default. Para um slot explicitamente
+customizavel, o host deve registrar a coordenada exata com `RuleExtensionTrust`,
+produzida depois da verificacao externa do artefato assinado e da allowlist. A
+attestation participa do `planDigest` e do resultado; ela nunca permite alterar
+um `PROTECTED_GUARD`. O engine nao carrega JARs, nao verifica certificados e nao
+oferece sandbox para codigo arbitrario.
+
 Transformacoes de write model usam `TRANSFORMATION_INTENT`: o executor Java
 propoe valores `before`/`after` tipados e o engine valida destino, schema ref,
 snapshot, limites, conflitos e proveniencia. O resultado e apenas uma proposta;
@@ -74,7 +81,8 @@ canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para
 `main` passa por `mvn clean verify`. O POM de desenvolvimento permanece
 `0.0.1-SNAPSHOT`; a coordenada publica atual e
 `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.12`, com engine contract
-`1.2`. O Praxis API Quickstart consumiu a coordenada diretamente do Maven
+`1.2`. A proxima beta candidata eleva o contrato para `1.3` ao fechar o
+default-deny de extensoes Java de cliente. O Praxis API Quickstart consumiu a coordenada diretamente do Maven
 Central e provou proposta tipada, allowlist/schema no host e persistencia
 transacional. A `0.1.0-beta.7` nao deve ser adotada por hosts porque consolidava
 incorretamente `ALLOW` intermediario com `NOT_APPLICABLE` terminal.

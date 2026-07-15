@@ -32,7 +32,8 @@ public final class RuleBindingExecutorRegistry {
         }
         Map<String, RuleImplementationRef> coordinates = new LinkedHashMap<>();
         indexed.forEach((key, executor) -> coordinates.put(
-                key, new RuleImplementationRef(key, executor.implementationVersion())));
+                key, new RuleImplementationRef(
+                        key, executor.implementationVersion(), executor.extensionTrust())));
         this.implementations = Map.copyOf(coordinates);
         this.executors = Map.copyOf(indexed);
     }
@@ -90,6 +91,28 @@ public final class RuleBindingExecutorRegistry {
     public boolean isCompatible(String implementationKey, String implementationVersion) {
         RuleImplementationRef implementation = implementations.get(implementationKey);
         return implementation != null && implementation.implementationVersion().equals(implementationVersion);
+    }
+
+    /**
+     * Tests whether an exact implementation carries verified customer-extension evidence.
+     * @param implementationKey namespaced key
+     * @param implementationVersion exact required version
+     * @return whether the exact coordinate is externally attested
+     */
+    public boolean isTrustedExtension(String implementationKey, String implementationVersion) {
+        RuleImplementationRef implementation = implementations.get(implementationKey);
+        return implementation != null
+                && implementation.implementationVersion().equals(implementationVersion)
+                && implementation.extensionTrust() != null;
+    }
+
+    /**
+     * Returns the immutable registered coordinate and its optional trust evidence.
+     * @param implementationKey namespaced key
+     * @return registered coordinate or {@code null}
+     */
+    public RuleImplementationRef implementationRef(String implementationKey) {
+        return implementations.get(implementationKey);
     }
 
     /**

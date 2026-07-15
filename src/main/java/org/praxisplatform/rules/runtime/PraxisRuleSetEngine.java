@@ -264,6 +264,21 @@ public final class PraxisRuleSetEngine {
                         null);
             }
         }
+        RuleImplementationRef expectedImplementation = plan.implementationRefs().stream()
+                .filter(reference -> reference.implementationKey().equals(
+                        binding.executor().implementationKey()))
+                .findFirst()
+                .orElse(null);
+        RuleImplementationRef actualImplementation = executorRegistry.implementationRef(
+                binding.executor().implementationKey());
+        if (expectedImplementation == null || !expectedImplementation.equals(actualImplementation)) {
+            return bindingResult(
+                    slot,
+                    binding,
+                    RuleDecision.TECHNICAL_ERROR,
+                    List.of("IMPLEMENTATION_TRUST_MISMATCH"),
+                    null);
+        }
         RuleBindingExecutor executor = executorRegistry.get(binding.executor().implementationKey());
         if (executor == null) {
             return bindingResult(
@@ -497,16 +512,7 @@ public final class PraxisRuleSetEngine {
     }
 
     private List<RuleImplementationRef> implementationRefs(RuleDecisionPlan plan) {
-        return plan.orderedBindings().stream()
-                .map(DecisionBinding::executor)
-                .filter(executor -> executor.type() == RuleExecutorType.JAVA)
-                .map(executor -> new RuleImplementationRef(
-                        executor.implementationKey(), executor.implementationVersion()))
-                .distinct()
-                .sorted(java.util.Comparator
-                        .comparing(RuleImplementationRef::implementationKey)
-                        .thenComparing(RuleImplementationRef::implementationVersion))
-                .toList();
+        return plan.implementationRefs();
     }
 
     private List<String> normalizedReasonCodes(List<String> reasonCodes) {

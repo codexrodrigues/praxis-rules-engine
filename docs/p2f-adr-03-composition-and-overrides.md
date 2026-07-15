@@ -39,8 +39,9 @@ levantar um `DENY` nem contornar protected guards.
 - `DISABLED` é estado de binding, não política;
 - parâmetro possui schema, faixa, unidade e default publicados;
 - replacement aponta para um único `slotKey` marcado `REPLACEABLE`;
-- regra Java de cliente exige processo de plugin assinado/allowlisted definido
-  pelo futuro P2F-ADR-05; class name arbitrário não é payload válido.
+- regra Java de cliente exige o processo assinado/allowlisted e a attestation
+  externa definidos pelo [P2F-ADR-05](p2f-adr-05-protected-extensions.md);
+  class name arbitrário não é payload válido.
 
 ## Validação negativa obrigatória
 
