@@ -35,7 +35,10 @@ def main() -> int:
             if target.startswith("/") or re.match(r"^[A-Za-z]:[/\\]", target):
                 errors.append(f"{source.relative_to(ROOT)}: machine-local or absolute link: {target}")
                 continue
-            if not (source.parent / target).resolve().exists():
+            resolved_target = (source.parent / target).resolve()
+            if not resolved_target.is_relative_to(ROOT):
+                continue
+            if not resolved_target.exists():
                 errors.append(f"{source.relative_to(ROOT)}: missing local link: {target}")
 
     if errors:
