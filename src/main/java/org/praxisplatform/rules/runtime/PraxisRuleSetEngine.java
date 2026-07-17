@@ -1,6 +1,8 @@
 package org.praxisplatform.rules.runtime;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -15,6 +17,7 @@ import org.praxisplatform.rules.contract.DecisionStage;
 import org.praxisplatform.rules.contract.RuleBindingResult;
 import org.praxisplatform.rules.contract.RuleDecision;
 import org.praxisplatform.rules.contract.RuleEvaluationResult;
+import org.praxisplatform.rules.contract.RuleEngineLimits;
 import org.praxisplatform.rules.contract.RuleImplementationRef;
 import org.praxisplatform.rules.contract.RuleExecutorResult;
 import org.praxisplatform.rules.contract.RuleExecutorType;
@@ -30,6 +33,7 @@ import org.praxisplatform.rules.digest.PraxisCanonicalJson;
 
 /** Stateless evaluator for an already validated and deterministically compiled RuleSet plan. */
 public final class PraxisRuleSetEngine {
+    private static final ObjectMapper JSON = new ObjectMapper();
     private final PraxisJsonLogicEngine jsonLogicEngine;
     private final RuleBindingExecutorRegistry executorRegistry;
 
@@ -101,6 +105,9 @@ public final class PraxisRuleSetEngine {
         java.util.Set<String> transformationKeys = new java.util.HashSet<>();
         java.util.Set<String> transformationTargets = new java.util.HashSet<>();
         boolean anyInconclusive = false;
+        int aggregatedBytes = 0;
+        int aggregatedReasonCodes = 0;
+        int aggregatedTransformations = 0;
         for (DecisionBinding binding : plan.orderedBindings()) {
             DecisionSlot slot = plan.slotsByKey().get(binding.slotKey());
             RuleBindingResult bindingResult = intentGateResult(
@@ -127,6 +134,19 @@ public final class PraxisRuleSetEngine {
                         RuleDecision.TECHNICAL_ERROR,
                         List.of("TRANSFORMATION_CONFLICT"),
                         null);
+            }
+            aggregatedReasonCodes += bindingResult.reasonCodes().size();
+            aggregatedTransformations += bindingResult.transformations().size();
+            aggregatedBytes += estimatedBytes(bindingResult);
+            if (aggregatedReasonCodes > RuleEngineLimits.MAX_AGGREGATED_REASON_CODES
+                    || aggregatedTransformations > RuleEngineLimits.MAX_AGGREGATED_TRANSFORMATIONS
+                    || aggregatedBytes > RuleEngineLimits.MAX_PUBLIC_RESULT_BYTES) {
+                return result(
+                        plan,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of(),
+                        List.of("EVALUATION_RESULT_LIMIT_EXCEEDED"),
+                        factsDigest);
             }
             bindingResults.add(bindingResult);
             resultsByBinding.put(binding.bindingKey(), bindingResult);
@@ -155,6 +175,12 @@ public final class PraxisRuleSetEngine {
                 .filter(binding -> !dependencyKeys.contains(binding.bindingKey()))
                 .map(binding -> resultsByBinding.get(binding.bindingKey()))
                 .anyMatch(bindingResult -> bindingResult.decision() == RuleDecision.ALLOW);
+        List<String> terminalNotApplicableReasons = plan.orderedBindings().stream()
+                .filter(binding -> !dependencyKeys.contains(binding.bindingKey()))
+                .map(binding -> resultsByBinding.get(binding.bindingKey()))
+                .filter(bindingResult -> bindingResult.decision() == RuleDecision.NOT_APPLICABLE)
+                .flatMap(bindingResult -> bindingResult.reasonCodes().stream())
+                .toList();
         return result(
                 plan,
                 anyInconclusive
@@ -167,7 +193,7 @@ public final class PraxisRuleSetEngine {
                                 .flatMap(item -> item.reasonCodes().stream())
                                 .filter(code -> !code.equals("DEPENDENCY_INCONCLUSIVE"))
                                 .toList()
-                        : List.of(),
+                        : terminalAllow ? List.of() : terminalNotApplicableReasons,
                 factsDigest);
     }
 
@@ -197,6 +223,14 @@ public final class PraxisRuleSetEngine {
         boolean notApplicable = false;
         for (String dependencyKey : binding.dependsOn()) {
             RuleBindingResult dependency = resultsByBinding.get(dependencyKey);
+            if (dependency == null) {
+                return bindingResult(
+                        slot,
+                        binding,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of("DEPENDENCY_RESULT_MISSING"),
+                        null);
+            }
             if (dependency != null && dependency.decision() == RuleDecision.INCONCLUSIVE) {
                 return bindingResult(
                         slot,
@@ -301,6 +335,14 @@ public final class PraxisRuleSetEngine {
                         binding,
                         RuleDecision.TECHNICAL_ERROR,
                         List.of("IMPLEMENTATION_RESULT_INVALID"),
+                        null);
+            }
+            if (!boundedExecutorCollections(executorResult)) {
+                return bindingResult(
+                        slot,
+                        binding,
+                        RuleDecision.TECHNICAL_ERROR,
+                        List.of("IMPLEMENTATION_RESULT_LIMIT_EXCEEDED"),
                         null);
             }
             if (slot.stage() == DecisionStage.EFFECT_INTENT
@@ -494,7 +536,7 @@ public final class PraxisRuleSetEngine {
             List<RuleBindingResult> bindingResults,
             List<String> reasonCodes,
             String factsDigest) {
-        return new RuleEvaluationResult(
+        RuleEvaluationResult candidate = new RuleEvaluationResult(
                 decision,
                 plan.definition().ref(),
                 plan.planDigest(),
@@ -509,6 +551,35 @@ public final class PraxisRuleSetEngine {
                                 .flatMap(item -> item.transformations().stream())
                                 .toList()
                         : List.of());
+        try {
+            jsonLogicEngine.validateResultValue(JSON.valueToTree(candidate), JsonLogicLimits.DEFAULT);
+            return candidate;
+        } catch (PraxisJsonLogicException exception) {
+            return new RuleEvaluationResult(
+                    RuleDecision.TECHNICAL_ERROR,
+                    plan.definition().ref(),
+                    plan.planDigest(),
+                    List.of(),
+                    List.of("EVALUATION_RESULT_LIMIT_EXCEEDED"),
+                    factsDigest,
+                    plan.definition().compatibility(),
+                    implementationRefs(plan),
+                    plan.definition().failPolicy(),
+                    List.of());
+        }
+    }
+
+    private boolean boundedExecutorCollections(RuleExecutorResult result) {
+        if (result.reasonCodes().size() > RuleEngineLimits.MAX_AGGREGATED_REASON_CODES
+                || result.transformations().size() > RuleEngineLimits.MAX_AGGREGATED_TRANSFORMATIONS) {
+            return false;
+        }
+        return result.reasonCodes().stream().allMatch(code -> code != null
+                && code.length() <= JsonLogicLimits.DEFAULT.maxStringLength());
+    }
+
+    private int estimatedBytes(RuleBindingResult result) {
+        return JSON.valueToTree(result).toString().getBytes(StandardCharsets.UTF_8).length;
     }
 
     private List<RuleImplementationRef> implementationRefs(RuleDecisionPlan plan) {
@@ -537,7 +608,12 @@ public final class PraxisRuleSetEngine {
                 if (!segment.matches("\\d+")) {
                     return false;
                 }
-                int index = Integer.parseInt(segment);
+                int index;
+                try {
+                    index = Integer.parseInt(segment);
+                } catch (NumberFormatException exception) {
+                    return false;
+                }
                 if (index >= current.size()) {
                     return false;
                 }

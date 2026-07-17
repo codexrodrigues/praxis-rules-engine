@@ -69,3 +69,19 @@ e merge em `main`, pelo `workflow_dispatch` oficial com `create_tag=true`. A
 coordenada somente será recomendada depois de prova downstream pública no
 Quickstart e de um catálogo externo de trust no control plane; o próprio
 snapshot nunca pode gerar sua allowlist.
+
+`0.1.0-beta.13` foi publicada pelo workflow oficial e consumida pelo Quickstart
+em repositório Maven vazio e exclusivo do Central. QL-07 registrou o SHA-256 do
+JAR resolvido e QL-09 provou attestation no plano/resultado, bloqueio de
+protected guard e substituição entre compilação e avaliação. IAM, PKI e
+revogação do ambiente corporativo-alvo permanecem gates separados.
+
+## Próxima beta — hardening determinístico / contract 1.4
+
+P2F-ADR-13 altera comportamento observável ao rejeitar versão divergente do
+dialeto, intents sem dependência direta de negócio e resultados agregados acima
+dos limites. Também converge o default composto de `var` entre TypeScript e Java.
+Por isso a fonte candidata usa engine contract `1.4`, preservando integralmente
+o trust de `1.3`. A linha de publicação continua `0.1.0-beta.*`; a versão prevista
+é `0.1.0-beta.14`, condicionada a `clean verify`, corpus byte a byte e smoke
+downstream Central-only.

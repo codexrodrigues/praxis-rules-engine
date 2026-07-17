@@ -33,7 +33,7 @@ public final class PraxisPath {
                 int end = raw.indexOf(']', i);
                 if (end < 0) throw invalid(raw);
                 String body = raw.substring(i + 1, end);
-                if (body.matches("\\d+")) out.add(body);
+                if (body.matches("\\d+")) out.add(boundedNumericSegment(body, raw));
                 else if (body.matches("\"[^\"\\\\]+\"")) out.add(body.substring(1, body.length() - 1));
                 else throw invalid(raw);
                 i = end + 1;
@@ -56,6 +56,15 @@ public final class PraxisPath {
         }
         out.add(token.toString());
         token.setLength(0);
+    }
+
+    private static String boundedNumericSegment(String segment, String raw) {
+        try {
+            Integer.parseInt(segment);
+            return segment;
+        } catch (NumberFormatException exception) {
+            throw invalid(raw);
+        }
     }
 
     private static PraxisJsonLogicException invalid(String path) {

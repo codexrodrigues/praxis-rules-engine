@@ -212,8 +212,26 @@ class TypedTransformationContractTest {
     }
 
     @Test
-    void publishesTheProtectedExtensionContractAsEngineBaselineOnePointThree() {
-        assertEquals("1.3", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
+    void publishesTheDeterministicBoundaryContractAsEngineBaselineOnePointFour() {
+        assertEquals("1.4", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
+    }
+
+    @Test
+    void boundsTheAggregatedTransformationCollectionBeforeEnrichment() throws Exception {
+        List<TransformationDraft> excessiveDrafts = java.util.stream.IntStream.range(0, 257)
+                .mapToObj(index -> draft("normalize.amount." + index, Integer.toString(2_000 + index)))
+                .toList();
+        RuleBindingExecutorRegistry registry = registry(new AtomicInteger(), excessiveDrafts);
+        var plan = new PraxisRulePlanCompiler(registry).compile(definition());
+        JsonNode facts = JSON.readTree("""
+                {"request":{"recommendedAmount":2500.00}}
+                """);
+
+        var result = new PraxisRuleSetEngine(registry).evaluate(plan, facts, NOW, ZONE);
+
+        assertEquals(RuleDecision.TECHNICAL_ERROR, result.decision());
+        assertEquals(List.of("IMPLEMENTATION_RESULT_LIMIT_EXCEEDED"), result.reasonCodes());
+        assertTrue(result.transformationProposals().isEmpty());
     }
 
     private RuleBindingExecutorRegistry registry(AtomicInteger executions, List<TransformationDraft> drafts) {

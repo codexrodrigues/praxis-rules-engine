@@ -1,6 +1,7 @@
 package org.praxisplatform.rules.plan;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import org.praxisplatform.rules.contract.DecisionSource;
 import org.praxisplatform.rules.contract.DecisionStage;
 import org.praxisplatform.rules.contract.OverridePolicy;
 import org.praxisplatform.rules.contract.RuleExecutorType;
+import org.praxisplatform.rules.contract.RuleEvaluationResult;
 import org.praxisplatform.rules.contract.RuleImplementationRef;
 import org.praxisplatform.rules.contract.RuleDecision;
 import org.praxisplatform.rules.contract.RuleRuntimeCompatibility;
@@ -28,10 +30,12 @@ import org.praxisplatform.rules.jsonlogic.PraxisJsonLogicEngine;
 import org.praxisplatform.rules.jsonlogic.PraxisJsonLogicException;
 import org.praxisplatform.rules.jsonlogic.internal.PraxisPath;
 import org.praxisplatform.rules.jsonlogic.model.JsonLogicValidationOptions;
+import org.praxisplatform.rules.jsonlogic.model.JsonLogicLimits;
 import org.praxisplatform.rules.runtime.RuleBindingExecutorRegistry;
 
 /** Stateless compiler that validates and deterministically orders a RuleSet definition. */
 public final class PraxisRulePlanCompiler {
+    private static final ObjectMapper JSON = new ObjectMapper();
     private static final int MAX_SLOTS = 256;
     private static final int MAX_BINDINGS = 1_024;
     private static final int MAX_DEPENDENCIES_PER_BINDING = 128;
@@ -74,12 +78,14 @@ public final class PraxisRulePlanCompiler {
         Map<String, DecisionBinding> bindings = indexEnabledBindings(definition.bindings());
         validateBindings(definition, slots, bindings);
         List<DecisionBinding> ordered = topologicalOrder(slots, bindings);
-        return new RuleDecisionPlan(
+        RuleDecisionPlan plan = new RuleDecisionPlan(
                 definition,
                 ordered,
                 slots,
                 implementationRefs(ordered),
                 digest(definition, ordered));
+        validateMinimalResultEnvelope(plan);
+        return plan;
     }
 
     private void validateCompatibility(RuleSetDefinition definition) {
@@ -213,6 +219,18 @@ public final class PraxisRulePlanCompiler {
                             binding.bindingKey());
                 }
             }
+            if ((slot.stage() == DecisionStage.EFFECT_INTENT
+                            || slot.stage() == DecisionStage.TRANSFORMATION_INTENT)
+                    && binding.dependsOn().stream()
+                            .map(bindings::get)
+                            .map(dependency -> slots.get(dependency.slotKey()).stage())
+                            .noneMatch(stage -> stage == DecisionStage.DOMAIN_DECISION
+                                    || stage == DecisionStage.POST_DECISION)) {
+                throw failure(
+                        RulePlanIssueCode.PLAN_DEPENDENCY_INVALID,
+                        "Intent binding requires at least one direct domain or post decision dependency",
+                        binding.bindingKey());
+            }
         }
         cardinality.forEach((slotKey, count) -> {
             if (slots.get(slotKey).cardinality() == SlotCardinality.SINGLE && count > 1) {
@@ -309,6 +327,14 @@ public final class PraxisRulePlanCompiler {
                         binding.bindingKey());
             }
             return;
+        }
+        if (!RuleRuntimeCompatibility.JSON_LOGIC_DIALECT_VERSION.equals(
+                binding.executor().implementationVersion())) {
+            throw failure(
+                    RulePlanIssueCode.PLAN_COMPATIBILITY_INVALID,
+                    "JSON Logic executor uses an incompatible dialect version: "
+                            + binding.executor().implementationVersion(),
+                    binding.bindingKey());
         }
         try {
             jsonLogicEngine.validate(
@@ -461,6 +487,28 @@ public final class PraxisRulePlanCompiler {
                         .comparing(RuleImplementationRef::implementationKey)
                         .thenComparing(RuleImplementationRef::implementationVersion))
                 .toList();
+    }
+
+    private void validateMinimalResultEnvelope(RuleDecisionPlan plan) {
+        RuleEvaluationResult minimal = new RuleEvaluationResult(
+                RuleDecision.TECHNICAL_ERROR,
+                plan.definition().ref(),
+                plan.planDigest(),
+                List.of(),
+                List.of("EVALUATION_RESULT_LIMIT_EXCEEDED"),
+                "0".repeat(64),
+                plan.definition().compatibility(),
+                plan.implementationRefs(),
+                plan.definition().failPolicy(),
+                List.of());
+        try {
+            jsonLogicEngine.validateResultValue(JSON.valueToTree(minimal), JsonLogicLimits.DEFAULT);
+        } catch (PraxisJsonLogicException exception) {
+            throw failure(
+                    RulePlanIssueCode.PLAN_LIMIT_EXCEEDED,
+                    "RuleSet cannot produce a bounded public result envelope",
+                    null);
+        }
     }
 
     private String implementationTrustMaterial(DecisionBinding binding) {

@@ -28,7 +28,10 @@ class PraxisJsonLogicConformanceTest {
 
     @Test
     void packagedCorpusMustMatchAngularCanonicalCorpusWhenBuiltInPlatformWorkspace() throws IOException {
-        Path angular = Path.of("..", "praxis-ui-angular", "docs", "json-logic-conformance", "conformance-fixtures.json").normalize();
+        String configuredPath = System.getProperty("praxis.angular.corpus.path");
+        Path angular = configuredPath == null || configuredPath.isBlank()
+                ? Path.of("..", "praxis-ui-angular", "docs", "json-logic-conformance", "conformance-fixtures.json").normalize()
+                : Path.of(configuredPath).normalize();
         if (!Files.exists(angular)) return; // isolated Maven builds prove only the packaged resource
         try (InputStream packaged = getClass().getResourceAsStream("/org/praxisplatform/rules/jsonlogic/conformance-fixtures.json")) {
             assertNotNull(packaged);

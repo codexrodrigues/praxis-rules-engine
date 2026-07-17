@@ -4,7 +4,7 @@ Todos os operadores abaixo estao no tipo/registry TypeScript e no registry Java.
 
 | Categoria | Operadores | Aridade | Retorno | Null/ausente e decisao |
 | --- | --- | --- | --- | --- |
-| native | `var` | 1..2 | unknown | default somente para ausente |
+| native | `var` | 1..2 | unknown | default lazy somente para ausente; aridade, path e expressão default são validados integralmente |
 | native | `== != === !==` | 2 | boolean | coercao fechada; estruturas por valor |
 | native | `> >= < <=` | 2 | boolean | numero-numero ou string-string |
 | native | `! !!` | 1 | boolean | truthiness Praxis |

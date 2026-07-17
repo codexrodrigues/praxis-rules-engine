@@ -9,7 +9,7 @@
 A ordem entre stages é fixa:
 
 ```text
-PROTECTED_GUARD -> DOMAIN_DECISION -> POST_DECISION -> EFFECT_INTENT
+PROTECTED_GUARD -> DOMAIN_DECISION -> POST_DECISION -> TRANSFORMATION_INTENT -> EFFECT_INTENT
 ```
 
 Bindings declaram `dependsOn`. Um inteiro de ordem é apenas desempate estável
@@ -47,6 +47,9 @@ O host avalia um plano capturado uma vez. Hot reload não mistura versões.
 - cálculo não executa após negativa consolidada;
 - `EFFECT_INTENT` somente planeja intenções após `ALLOW` consolidável e nunca
   admite `DENY` como resultado de planejamento;
+- todo intent exige ao menos uma dependência direta em `DOMAIN_DECISION` ou
+  `POST_DECISION`; dependências adicionais válidas podem ordenar intents sem
+  substituírem a autorização de negócio;
 - nenhum stage executa I/O, transação ou efeito dentro do engine.
 
 ## Limites
