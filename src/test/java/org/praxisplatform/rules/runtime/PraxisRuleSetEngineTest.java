@@ -509,6 +509,109 @@ class PraxisRuleSetEngineTest {
 
         assertEquals(RuleDecision.NOT_APPLICABLE, result.decision());
         assertEquals(List.of("PROGRAM_NOT_APPLICABLE"), result.bindingResults().get(1).reasonCodes());
+        assertEquals(List.of("PROGRAM_NOT_APPLICABLE"), result.reasonCodes());
+    }
+
+    @Test
+    void intentsRequireABusinessDecisionButMayAlsoDependOnEarlierOperationalNodes() throws Exception {
+        DecisionSlot guardSlot = slot("guard", DecisionStage.PROTECTED_GUARD, OverridePolicy.FORBIDDEN);
+        DecisionSlot decisionSlot = slot("decision", DecisionStage.DOMAIN_DECISION, OverridePolicy.FORBIDDEN);
+        DecisionSlot intentSlot = slot("intent", DecisionStage.EFFECT_INTENT, OverridePolicy.FORBIDDEN);
+        DecisionBinding guard = jsonBinding("guard", "guard", List.of(), RuleDecision.DENY, "GUARD_FALSE");
+        DecisionBinding decision = jsonBinding(
+                "decision", "decision", List.of("guard"), RuleDecision.DENY, "DECISION_FALSE");
+        RuleBindingExecutorRegistry registry = new RuleBindingExecutorRegistry(List.of(new RuleBindingExecutor() {
+            public String implementationKey() { return "benefits:intent"; }
+            public String implementationVersion() { return "1.0.0"; }
+            public RuleExecutorResult evaluate(RuleExecutorContext context) { return RuleExecutorResult.allow(); }
+        }));
+        DecisionBinding validIntent = new DecisionBinding(
+                "intent", "intent", DecisionSource.PRODUCT, null,
+                RuleExecutorRef.java("benefits:intent", "1.0.0"), List.of("decision", "guard"), 2, true,
+                null, null, List.of());
+
+        new PraxisRulePlanCompiler(registry).compile(simpleDefinition(
+                List.of(guardSlot, decisionSlot, intentSlot), List.of(guard, decision, validIntent)));
+
+        DecisionBinding invalidIntent = new DecisionBinding(
+                "intent", "intent", DecisionSource.PRODUCT, null,
+                RuleExecutorRef.java("benefits:intent", "1.0.0"), List.of("guard"), 2, true,
+                null, null, List.of());
+        RulePlanException failure = assertThrows(
+                RulePlanException.class,
+                () -> new PraxisRulePlanCompiler(registry).compile(simpleDefinition(
+                        List.of(guardSlot, intentSlot), List.of(guard, invalidIntent))));
+        assertEquals(RulePlanIssueCode.PLAN_DEPENDENCY_INVALID, failure.getCode());
+    }
+
+    @Test
+    void rejectsAJsonLogicBindingWithAConflictingDialectCoordinate() throws Exception {
+        DecisionSlot decisionSlot = slot("decision", DecisionStage.DOMAIN_DECISION, OverridePolicy.FORBIDDEN);
+        DecisionBinding binding = new DecisionBinding(
+                "decision", "decision", DecisionSource.PRODUCT, null,
+                new org.praxisplatform.rules.contract.RuleExecutorRef(
+                        org.praxisplatform.rules.contract.RuleExecutorType.JSON_LOGIC,
+                        null, "9.9", expression("true")),
+                List.of(), 1, true, RuleDecision.DENY, "DECISION_FALSE", List.of());
+
+        RulePlanException failure = assertThrows(
+                RulePlanException.class,
+                () -> new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
+                        .compile(simpleDefinition(List.of(decisionSlot), List.of(binding))));
+
+        assertEquals(RulePlanIssueCode.PLAN_COMPATIBILITY_INVALID, failure.getCode());
+    }
+
+    @Test
+    void boundsHostProducedReasonCollections() throws Exception {
+        List<String> excessiveReasons = java.util.stream.IntStream.range(0, 1_025)
+                .mapToObj(index -> "REASON_" + index)
+                .toList();
+        RuleBindingExecutorRegistry registry = new RuleBindingExecutorRegistry(List.of(
+                new RuleBindingExecutor() {
+                    public String implementationKey() { return "benefits:bounded"; }
+                    public String implementationVersion() { return "1.0.0"; }
+                    public RuleExecutorResult evaluate(RuleExecutorContext context) {
+                        return new RuleExecutorResult(RuleDecision.ALLOW, excessiveReasons, null);
+                    }
+                }));
+        DecisionSlot decisionSlot = slot("decision", DecisionStage.DOMAIN_DECISION, OverridePolicy.FORBIDDEN);
+        DecisionBinding binding = new DecisionBinding(
+                "decision", "decision", DecisionSource.PRODUCT, null,
+                RuleExecutorRef.java("benefits:bounded", "1.0.0"), List.of(), 1, true,
+                null, null, List.of());
+        RuleDecisionPlan plan = new PraxisRulePlanCompiler(registry)
+                .compile(simpleDefinition(List.of(decisionSlot), List.of(binding)));
+
+        var result = new PraxisRuleSetEngine(registry)
+                .evaluate(plan, JSON.createObjectNode().putObject("request"), NOW, ZONE);
+
+        assertEquals(RuleDecision.TECHNICAL_ERROR, result.decision());
+        assertEquals(List.of("IMPLEMENTATION_RESULT_LIMIT_EXCEEDED"), result.reasonCodes());
+    }
+
+    @Test
+    void rejectsAPlanWhoseMinimalTechnicalEnvelopeCannotFit() throws Exception {
+        String implementationKey = "benefits:" + "x".repeat(256_000);
+        RuleBindingExecutorRegistry registry = new RuleBindingExecutorRegistry(List.of(
+                new RuleBindingExecutor() {
+                    public String implementationKey() { return implementationKey; }
+                    public String implementationVersion() { return "1.0.0"; }
+                    public RuleExecutorResult evaluate(RuleExecutorContext context) {
+                        return RuleExecutorResult.allow();
+                    }
+                }));
+        DecisionSlot decisionSlot = slot("decision", DecisionStage.DOMAIN_DECISION, OverridePolicy.FORBIDDEN);
+        DecisionBinding binding = new DecisionBinding(
+                "decision", "decision", DecisionSource.PRODUCT, null,
+                RuleExecutorRef.java(implementationKey, "1.0.0"), List.of(), 1, true,
+                null, null, List.of());
+
+        RulePlanException failure = assertThrows(
+                RulePlanException.class,
+                () -> new PraxisRulePlanCompiler(registry)
+                        .compile(simpleDefinition(List.of(decisionSlot), List.of(binding))));
+        assertEquals(RulePlanIssueCode.PLAN_LIMIT_EXCEEDED, failure.getCode());
     }
 
     @Test

@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-13",
+  "version": "2026-07-17",
   "description": "Canonical typed FE/BE Json Logic conformance corpus for Praxis.",
   "operatorCatalog": [
     ["var","native",1,2],["==","native",2,2],["===","native",2,2],["!=","native",2,2],["!==","native",2,2],
@@ -69,6 +69,55 @@
       },
       "expect": {
         "value": "fallback",
+        "truthy": true
+      }
+    },
+    {
+      "id": "var-default-expression",
+      "expression": {
+        "var": [
+          "missing",
+          {
+            "cat": [
+              "fallback-",
+              { "var": "suffix" }
+            ]
+          }
+        ]
+      },
+      "data": {
+        "suffix": "value"
+      },
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": "fallback-value",
+        "truthy": true
+      }
+    },
+    {
+      "id": "var-default-expression-lazy",
+      "expression": {
+        "var": [
+          "present",
+          { "/": [1, 0] }
+        ]
+      },
+      "data": {
+        "present": "kept"
+      },
+      "options": {
+        "availableRoots": [],
+        "allowImplicitRoot": true,
+        "nowUtc": "2026-04-03T12:00:00Z",
+        "userTimeZone": "America/Sao_Paulo"
+      },
+      "expect": {
+        "value": "kept",
         "truthy": true
       }
     },

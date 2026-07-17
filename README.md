@@ -46,6 +46,9 @@ head, persistência, rollback, cache e troca atômica continuam fora deste JAR.
 O resultado preserva `DENY`, `NOT_APPLICABLE`, `INCONCLUSIVE` e
 `TECHNICAL_ERROR` sem colapsa-los em boolean, inclui `planDigest`, `factsDigest`,
 baseline de engine/dialect e versoes das implementacoes Java utilizadas.
+Coordenadas Java são revalidadas na avaliação, e o resultado agregado aplica
+limites determinísticos de bytes, itens e strings. Razões terminais de
+`NOT_APPLICABLE` permanecem no resultado consolidado para explicação e auditoria.
 
 Extensoes Java de cliente falham por default. Para um slot explicitamente
 customizavel, o host deve registrar a coordenada exata com `RuleExtensionTrust`,
@@ -80,11 +83,14 @@ registry versionado e evaluator service-level estao publicados. O repositorio
 canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para
 `main` passa por `mvn clean verify`. O POM de desenvolvimento permanece
 `0.0.1-SNAPSHOT`; a coordenada publica atual e
-`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.12`, com engine contract
-`1.2`. A proxima beta candidata eleva o contrato para `1.3` ao fechar o
-default-deny de extensoes Java de cliente. O Praxis API Quickstart consumiu a coordenada diretamente do Maven
-Central e provou proposta tipada, allowlist/schema no host e persistencia
+`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.13`, com engine contract
+`1.3`. O Praxis API Quickstart consumiu essa coordenada diretamente do Maven
+Central e provou trust, proposta tipada, allowlist/schema no host e persistencia
 transacional. A `0.1.0-beta.7` nao deve ser adotada por hosts porque consolidava
 incorretamente `ALLOW` intermediario com `NOT_APPLICABLE` terminal.
+
+O checkout atual prepara a próxima beta com engine contract `1.4`, conforme
+P2F-ADR-13. Essa fonte ainda não deve ser recomendada como coordenada publicada
+até o workflow oficial e o smoke downstream Central-only concluírem.
 
 Consulte [architecture.md](docs/architecture.md), [operator-conformance-matrix.md](docs/operator-conformance-matrix.md), [release-readiness.md](docs/release-readiness.md) e o [pacote de ADRs da plataforma de regras](docs/p2f-rule-platform-adrs.md).

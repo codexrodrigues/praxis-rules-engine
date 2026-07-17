@@ -24,13 +24,23 @@ public final class SafeRegex {
         if (withoutBounds.indexOf('{') >= 0 || withoutBounds.indexOf('}') >= 0) throw invalid("uses an invalid bounded quantifier");
         var bounds = Pattern.compile("\\{(\\d+)(?:,(\\d+))?}").matcher(expression);
         while (bounds.find()) {
-            int maximum = Integer.parseInt(bounds.group(2) == null ? bounds.group(1) : bounds.group(2));
-            if (maximum > 256) throw invalid("uses a bounded quantifier above 256");
+            if (boundAboveMaximum(bounds.group(1))
+                    || bounds.group(2) != null && boundAboveMaximum(bounds.group(2))) {
+                throw invalid("uses a bounded quantifier above 256");
+            }
         }
         long complexity = expression.chars().filter(c -> c == '?' || c == '{').count();
         if (complexity > limits.maxRegexComplexity()) throw invalid("exceeds the complexity limit");
         try { return Pattern.compile(expression); }
         catch (PatternSyntaxException ex) { throw invalid("is syntactically invalid"); }
+    }
+
+    private static boolean boundAboveMaximum(String value) {
+        try {
+            return Integer.parseInt(value) > 256;
+        } catch (NumberFormatException exception) {
+            return true;
+        }
     }
 
     private static PraxisJsonLogicException invalid(String reason) {

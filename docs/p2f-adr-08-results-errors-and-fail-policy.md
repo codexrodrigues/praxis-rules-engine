@@ -40,6 +40,12 @@ puro limitado, sem execução de efeito.
 Reason code é estável e machine-readable. Mensagem localizada pertence ao
 host/metadata; exception text não é código público.
 
+Razões terminais de `NOT_APPLICABLE` são preservadas no envelope consolidado.
+O resultado completo respeita limites determinísticos: até 1.024 reason codes,
+256 propostas de transformação e 256.000 bytes. Expansão agregada acima desses
+limites retorna `TECHNICAL_ERROR/EVALUATION_RESULT_LIMIT_EXCEEDED` sem payload
+parcial.
+
 ## Fail policy
 
 Fail policy pertence à boundary e é validada na publicação:

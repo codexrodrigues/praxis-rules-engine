@@ -132,7 +132,27 @@ public final class PraxisJsonLogicEngine {
     }
 
     private Object evaluateNode(JsonNode n,JsonLogicEvaluationContext c,Budget b,int depth){b.visit(depth);if(n==null||n.isNull())return null;if(n.isNumber())return n.decimalValue();if(n.isTextual()){b.string(n.textValue().length());return n.textValue();}if(n.isBoolean())return n.booleanValue();if(n.isArray()){b.array(n.size());List<Object>r=new ArrayList<>();for(JsonNode x:n)r.add(evaluateNode(x,c,b,depth+1));return r;}if(!n.isObject())return MAPPER.convertValue(n,Object.class);ObjectNode o=(ObjectNode)n;if(o.size()!=1){Map<String,Object>m=new LinkedHashMap<>();o.properties().forEach(x->m.put(x.getKey(),evaluateNode(x.getValue(),c,b,depth+1)));return m;}var en=o.properties().iterator().next();String op=en.getKey();JsonNode raw=en.getValue();b.operation();return switch(op){case"var"->evalVar(raw,c,b,depth);case"and"->evalAnd(raw,c,b,depth);case"or"->evalOr(raw,c,b,depth);case"if"->evalIf(raw,c,b,depth);case"!"->!truthy(argValues(op,raw,c,b,depth,1,1).get(0));case"!!"->truthy(argValues(op,raw,c,b,depth,1,1).get(0));case"==","===","!=","!==",">",">=","<","<="->comparison(op,argValues(op,raw,c,b,depth,2,2));case"+","-","*","/","%","min","max"->arithmetic(op,argValues(op,raw,c,b,depth,op.equals("/")?2:1,op.equals("%")?2:null));case"in"->in(argValues(op,raw,c,b,depth,2,2));case"cat"->argValues(op,raw,c,b,depth,1,null).stream().map(v->v==null||v==MissingValue.INSTANCE?"":String.valueOf(v)).reduce("",String::concat);case"substr"->substr(argValues(op,raw,c,b,depth,2,3));case"merge"->merge(argValues(op,raw,c,b,depth,1,null),b);case"map","filter","reduce","all","some","none"->higher(op,raw,c,b,depth);default->custom(op,raw,c,b,depth);};}
-    private Object evalVar(JsonNode r,JsonLogicEvaluationContext c,Budget b,int d){String p;JsonNode def=null;if(r.isTextual())p=r.textValue();else if(r.isArray()&&(r.size()==1||r.size()==2)&&r.get(0).isTextual()){p=r.get(0).textValue();if(r.size()==2)def=r.get(1);}else throw error(JsonLogicIssueCode.RULE_ARITY_INVALID,"`var` requires a string path or [path, defaultValue].","$","var");Object v=resolve(p,c);return v==MissingValue.INSTANCE&&def!=null?evaluateNode(def,c,b,d+1):v;}
+    private Object evalVar(JsonNode raw, JsonLogicEvaluationContext context, Budget budget, int depth) {
+        String path;
+        JsonNode defaultValue = null;
+        if (raw.isTextual()) {
+            path = raw.textValue();
+        } else if (raw.isArray() && (raw.size() == 1 || raw.size() == 2)) {
+            if (!raw.get(0).isTextual()) {
+                throw error(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID,
+                        "`var` requires a string path as the first argument.", "$", "var");
+            }
+            path = raw.get(0).textValue();
+            if (raw.size() == 2) defaultValue = raw.get(1);
+        } else {
+            throw error(JsonLogicIssueCode.RULE_ARITY_INVALID,
+                    "`var` requires a string path or [path, defaultValue].", "$", "var");
+        }
+        Object value = resolve(path, context);
+        return value == MissingValue.INSTANCE && defaultValue != null
+                ? evaluateNode(defaultValue, context, budget, depth + 1)
+                : value;
+    }
     private Object evalAnd(JsonNode r,JsonLogicEvaluationContext c,Budget b,int d){List<JsonNode>a=args(r,"and",1,null);Object v=null;for(JsonNode x:a){v=evaluateNode(x,c,b,d+1);if(!truthy(v))return v;}return v;}
     private Object evalOr(JsonNode r,JsonLogicEvaluationContext c,Budget b,int d){List<JsonNode>a=args(r,"or",1,null);Object v=null;for(JsonNode x:a){v=evaluateNode(x,c,b,d+1);if(truthy(v))return v;}return v;}
     private Object evalIf(JsonNode r,JsonLogicEvaluationContext c,Budget b,int d){List<JsonNode>a=args(r,"if",2,null);for(int i=0;i+1<a.size();i+=2)if(truthy(evaluateNode(a.get(i),c,b,d+1)))return evaluateNode(a.get(i+1),c,b,d+1);return a.size()%2==1?evaluateNode(a.get(a.size()-1),c,b,d+1):null;}
@@ -151,8 +171,120 @@ public final class PraxisJsonLogicEngine {
     private Object higher(String op,JsonNode raw,JsonLogicEvaluationContext c,Budget b,int d){List<JsonNode>a=args(raw,op,2,op.equals("reduce")?3:2);Object src=evaluateNode(a.get(0),c,b,d+1);if(!(src instanceof List<?>list))throw error(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID,"Operator "+op+" requires an array.","$",op);b.array(list.size());if(op.equals("map")){List<Object>r=new ArrayList<>();for(Object x:list)r.add(evaluateNode(a.get(1),child(c,x),b,d+1));return r;}if(op.equals("filter")){List<Object>r=new ArrayList<>();for(Object x:list)if(truthy(evaluateNode(a.get(1),child(c,x),b,d+1)))r.add(x);return r;}if(op.equals("reduce")){Object acc=a.size()==3?evaluateNode(a.get(2),c,b,d+1):MissingValue.INSTANCE;for(Object x:list){Map<String,Object>scope=new LinkedHashMap<>();scope.put("current",x);scope.put("accumulator",acc);acc=evaluateNode(a.get(1),child(c,scope),b,d+1);}return acc;}if(op.equals("all")&&list.isEmpty())return false;boolean any=false;for(Object x:list){boolean hit=truthy(evaluateNode(a.get(1),child(c,x),b,d+1));if(op.equals("all")&&!hit)return false;if((op.equals("some")||op.equals("none"))&&hit){any=true;break;}}return op.equals("all")||op.equals("some")?any||op.equals("all"):!any;}
     private JsonLogicEvaluationContext child(JsonLogicEvaluationContext c,Object data){return new JsonLogicEvaluationContext(MAPPER.valueToTree(data),List.of(),null,true,c.nowUtc(),c.userTimeZone(),c.limits());}
     private Object resolve(String p,JsonLogicEvaluationContext c){if(p.isEmpty())return MAPPER.convertValue(c.data(),Object.class);List<String>tokens=PraxisPath.parse(p);String first=tokens.get(0);if(!c.allowImplicitRoot()&&c.availableRoots().size()>1&&!c.availableRoots().contains(first))throw error(JsonLogicIssueCode.RULE_CONTEXT_AMBIGUOUS,"Implicit root is not allowed for path \""+p+"\".","$","var");return readPath(c.data(),tokens);}
-    private Object readPath(JsonNode data,List<String>tokens){JsonNode cur=data;for(String s:tokens){if(cur==null||cur.isNull())return MissingValue.INSTANCE;if(cur.isArray()){if(!s.matches("\\d+"))return MissingValue.INSTANCE;int i=Integer.parseInt(s);if(i>=cur.size())return MissingValue.INSTANCE;cur=cur.get(i);}else if(cur.isObject()){if(!cur.has(s))return MissingValue.INSTANCE;cur=cur.get(s);}else return MissingValue.INSTANCE;}return cur==null?MissingValue.INSTANCE:cur.isNull()?null:MAPPER.convertValue(cur,Object.class);}
-    private void validateNode(JsonNode n,JsonLogicEvaluationContext c,String path,List<JsonLogicValidationIssue>issues,boolean top,Budget b,int depth){b.visit(depth);if(n==null)return;if(n.isTextual()){b.string(n.textValue().length());return;}if(n.isValueNode())return;if(n.isArray()){b.array(n.size());if(top)issue(issues,JsonLogicIssueCode.RULE_SHAPE_INVALID,"Top-level condition cannot be an array.",path,null);for(int i=0;i<n.size();i++)validateNode(n.get(i),c,path+"["+i+"]",issues,false,b,depth+1);return;}if(!n.isObject())return;if(n.size()!=1){if(top)issue(issues,JsonLogicIssueCode.RULE_SHAPE_INVALID,"Condition must contain exactly one operator.",path,null);for(var child:n.properties())validateNode(child.getValue(),c,path+"."+child.getKey(),issues,false,b,depth+1);return;}var e=n.properties().iterator().next();String op=e.getKey();JsonNode raw=e.getValue();b.operation();try{if(op.equals("var")){String p=raw.isTextual()?raw.textValue():raw.isArray()&&raw.size()>0&&raw.get(0).isTextual()?raw.get(0).textValue():null;if(p==null)throw error(JsonLogicIssueCode.RULE_ARITY_INVALID,"`var` requires a string path or [path, defaultValue].",path,"var");if(!p.isEmpty()){List<String>t=PraxisPath.parse(p);String first=t.get(0);if(ROOTS.contains(first)&&!c.availableRoots().isEmpty()&&!c.availableRoots().contains(first))throw error(JsonLogicIssueCode.RULE_ROOT_UNKNOWN,"Root \""+first+"\" is unavailable.",path,"var");if(!c.allowImplicitRoot()&&c.availableRoots().size()>1&&!c.availableRoots().contains(first))throw error(JsonLogicIssueCode.RULE_CONTEXT_AMBIGUOUS,"Implicit root is not allowed.",path,"var");}}else{JsonLogicOperatorDescriptor descriptor=descriptor(op);if(descriptor==null)throw error(JsonLogicIssueCode.RULE_OPERATOR_UNKNOWN,"Unsupported JSON Logic operator: "+op,path,op);List<JsonNode>a=args(raw,op,descriptor.minArgs(),descriptor.maxArgs());if(op.equals("matches")&&a.size()==2&&a.get(1).isTextual())org.praxisplatform.rules.jsonlogic.internal.SafeRegex.compile(a.get(1).textValue(),c.limits());for(int i=0;i<a.size();i++)validateNode(a.get(i),c,path+"."+op+"["+i+"]",issues,false,b,depth+1);}}catch(PraxisJsonLogicException ex){issue(issues,ex.getCode(),ex.getMessage(),ex.getPath(),ex.getOperator());}}
+    private Object readPath(JsonNode data,List<String>tokens){JsonNode cur=data;for(String s:tokens){if(cur==null||cur.isNull())return MissingValue.INSTANCE;if(cur.isArray()){if(!s.matches("\\d+"))return MissingValue.INSTANCE;int i;try{i=Integer.parseInt(s);}catch(NumberFormatException exception){return MissingValue.INSTANCE;}if(i>=cur.size())return MissingValue.INSTANCE;cur=cur.get(i);}else if(cur.isObject()){if(!cur.has(s))return MissingValue.INSTANCE;cur=cur.get(s);}else return MissingValue.INSTANCE;}return cur==null?MissingValue.INSTANCE:cur.isNull()?null:MAPPER.convertValue(cur,Object.class);}
+    private void validateNode(
+            JsonNode node,
+            JsonLogicEvaluationContext context,
+            String path,
+            List<JsonLogicValidationIssue> issues,
+            boolean top,
+            Budget budget,
+            int depth) {
+        budget.visit(depth);
+        if (node == null) return;
+        if (node.isTextual()) {
+            budget.string(node.textValue().length());
+            return;
+        }
+        if (node.isValueNode()) return;
+        if (node.isArray()) {
+            budget.array(node.size());
+            if (top) issue(issues, JsonLogicIssueCode.RULE_SHAPE_INVALID,
+                    "Top-level condition cannot be an array.", path, null);
+            for (int index = 0; index < node.size(); index++) {
+                validateNode(node.get(index), context, path + "[" + index + "]",
+                        issues, false, budget, depth + 1);
+            }
+            return;
+        }
+        if (!node.isObject()) return;
+        if (node.size() != 1) {
+            if (top) issue(issues, JsonLogicIssueCode.RULE_SHAPE_INVALID,
+                    "Condition must contain exactly one operator.", path, null);
+            for (var child : node.properties()) {
+                validateNode(child.getValue(), context, path + "." + child.getKey(),
+                        issues, false, budget, depth + 1);
+            }
+            return;
+        }
+        var entry = node.properties().iterator().next();
+        String operator = entry.getKey();
+        JsonNode raw = entry.getValue();
+        budget.operation();
+        try {
+            if (operator.equals("var")) {
+                validateVar(raw, context, path, issues, budget, depth);
+                return;
+            }
+            JsonLogicOperatorDescriptor descriptor = descriptor(operator);
+            if (descriptor == null) {
+                throw error(JsonLogicIssueCode.RULE_OPERATOR_UNKNOWN,
+                        "Unsupported JSON Logic operator: " + operator, path, operator);
+            }
+            List<JsonNode> arguments = args(raw, operator, descriptor.minArgs(), descriptor.maxArgs());
+            if (operator.equals("matches") && arguments.size() == 2 && arguments.get(1).isTextual()) {
+                org.praxisplatform.rules.jsonlogic.internal.SafeRegex.compile(
+                        arguments.get(1).textValue(), context.limits());
+            }
+            for (int index = 0; index < arguments.size(); index++) {
+                validateNode(arguments.get(index), context,
+                        path + "." + operator + "[" + index + "]",
+                        issues, false, budget, depth + 1);
+            }
+        } catch (PraxisJsonLogicException exception) {
+            issue(issues, exception.getCode(), exception.getMessage(),
+                    exception.getPath(), exception.getOperator());
+        }
+    }
+
+    private void validateVar(
+            JsonNode raw,
+            JsonLogicEvaluationContext context,
+            String path,
+            List<JsonLogicValidationIssue> issues,
+            Budget budget,
+            int depth) {
+        String variablePath;
+        JsonNode defaultValue = null;
+        if (raw != null && raw.isTextual()) {
+            variablePath = raw.textValue();
+            budget.visit(depth + 1);
+            budget.string(variablePath.length());
+        } else if (raw != null && raw.isArray()
+                && (raw.size() == 1 || raw.size() == 2)
+                && raw.get(0).isTextual()) {
+            variablePath = raw.get(0).textValue();
+            budget.array(raw.size());
+            budget.visit(depth + 1);
+            budget.string(variablePath.length());
+            if (raw.size() == 2) defaultValue = raw.get(1);
+        } else if (raw != null && raw.isArray()
+                && (raw.size() == 1 || raw.size() == 2)) {
+            throw error(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID,
+                    "`var` requires a string path as the first argument.", path, "var");
+        } else {
+            throw error(JsonLogicIssueCode.RULE_ARITY_INVALID,
+                    "`var` requires a string path or [path, defaultValue].", path, "var");
+        }
+        if (!variablePath.isEmpty()) {
+            List<String> tokens = PraxisPath.parse(variablePath);
+            String first = tokens.get(0);
+            if (ROOTS.contains(first) && !context.availableRoots().isEmpty()
+                    && !context.availableRoots().contains(first)) {
+                throw error(JsonLogicIssueCode.RULE_ROOT_UNKNOWN,
+                        "Root \"" + first + "\" is unavailable.", path, "var");
+            }
+            if (!context.allowImplicitRoot() && context.availableRoots().size() > 1
+                    && !context.availableRoots().contains(first)) {
+                throw error(JsonLogicIssueCode.RULE_CONTEXT_AMBIGUOUS,
+                        "Implicit root is not allowed.", path, "var");
+            }
+        }
+        if (defaultValue != null) {
+            validateNode(defaultValue, context, path + ".var[1]",
+                    issues, false, budget, depth + 1);
+        }
+    }
     private JsonLogicOperatorDescriptor descriptor(String op){return listOperatorDescriptors().stream().filter(x->x.operator().equals(op)).findFirst().orElse(null);}
     private JsonLogicEvaluationContext context(JsonNode d,JsonLogicEvaluationOptions o){return new JsonLogicEvaluationContext(d==null?MAPPER.createObjectNode():d,o==null?List.of():o.availableRoots(),o==null?null:o.defaultRoot(),o!=null&&Boolean.TRUE.equals(o.allowImplicitRoot())||(o==null||o.availableRoots().size()<=1),o==null?null:o.nowUtc(),o==null?null:o.userTimeZone(),o==null?JsonLogicLimits.DEFAULT:o.limits());}
     private void checkSize(JsonNode e,JsonLogicLimits l){if(e!=null&&e.toString().getBytes(StandardCharsets.UTF_8).length>l.maxExpressionBytes())throw error(JsonLogicIssueCode.RULE_LIMIT_EXCEEDED,"Expression exceeds the byte limit.","$",null);}

@@ -7,6 +7,8 @@
 - ausente e `null` sao distintos internamente;
 - validacao usa os descriptors publicados para aridade e disponibilidade; o `operatorCatalog` do corpus compartilhado bloqueia drift de nome, origem e aridade entre Java e TypeScript;
 - paths, regex e limites falham com codigos estaveis;
+- indices bracket numericos nao citados e bounds de regex fora da faixa falham como
+  `RULE_PATH_INVALID`/`RULE_REGEX_INVALID`, nunca como excecao numerica do JDK;
 - os contratos runtime-neutros, planner e evaluator de QL-02 pertencem a este
   modulo conforme [P2F-ADR-01](p2f-adr-01-runtime-contract-ownership.md) e ja
   integram a linha beta publica;
@@ -30,6 +32,11 @@ Profundidade 64; 10.000 nos; 256 KB de expressao/resultado; 10.000 itens por arr
 
 Regex aceita somente o subconjunto comum limitado: literais, escapes, classes, ancoras, `?` e quantificadores `{n}`/`{n,m}` com maximo 256. Grupos, alternancia, backreferences, `*` e `+` sao rejeitados antes da compilacao.
 
+O envelope público consolidado também é limitado: no máximo 1.024 reason codes,
+256 propostas de transformação e 256.000 bytes. Expansão combinada falha com
+`EVALUATION_RESULT_LIMIT_EXCEEDED`, sem devolver payload parcial. O compilador
+prova que o envelope técnico mínimo do plano cabe nesses limites.
+
 ## Composicao RuleSet
 
 `RuleSetDefinition -> validacao de compatibilidade e referencias -> DAG
@@ -50,7 +57,8 @@ registry executavel e falha antes da chamada quando houver substituicao.
 Facts e outputs Java atravessam os mesmos limites estruturais do runtime JSON
 Logic. `EFFECT_INTENT` e `TRANSFORMATION_INTENT` nao executam enquanto uma
 decisao anterior estiver inconclusiva e exigem dependencia explicita. O segundo
-aceita somente executor Java confiavel, valida propostas tipadas contra o
+exige ao menos uma dependência direta de domínio ou pós-decisão, aceita somente
+executor Java confiavel, valida propostas tipadas contra o
 snapshot e as raizes declaradas, mas nunca altera facts nem materializa writes.
 Effects, autorizacao, schema governado, concorrencia e transacao permanecem no
 host. A decisao final usa os bindings terminais do DAG; um

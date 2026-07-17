@@ -40,8 +40,9 @@
 
 | Artefato/linha | Engine contract | Dialeto | Estado |
 | --- | --- | --- | --- |
-| `0.1.0-beta.12` | `1.2` | `1.0` | Coordenada publica atual, consumida pelo Quickstart. |
-| `0.1.0-beta.13` | `1.3` | `1.0` | Candidata em `main`; adiciona atestacao de extensao Java por `RuleExtensionTrust` e ainda requer publicacao/prova downstream. |
-| checkout atual | `1.3` | `1.0` | Fonte candidata em `main`; nao e prova de coordenada publicada. |
+| `0.1.0-beta.12` | `1.2` | `1.0` | Linha anterior com propostas de transformação tipadas. |
+| `0.1.0-beta.13` | `1.3` | `1.0` | Coordenada pública atual; adiciona `RuleExtensionTrust` e possui prova downstream Central-only. |
+| próxima beta candidata | `1.4` | `1.0` | Hardening determinístico do P2F-ADR-13; ainda não publicada. |
+| checkout atual | `1.4` | `1.0` | Fonte candidata; não constitui prova de coordenada publicada. |
 
 O SHA-256 do corpus e parte de `RuleRuntimeCompatibility`; consumidores nao devem aceitar RuleSets com coordenadas divergentes. O contrato efetivo de um consumidor deve ser provado contra a coordenada Maven publicada, nao inferido de uma fonte candidata em `main`.

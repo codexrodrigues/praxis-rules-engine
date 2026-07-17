@@ -60,6 +60,60 @@ class PraxisJsonLogicEngineTest {
         assertEquals("substr",substring.getOperator());
     }
 
+    @Test void validatesVarArityAndEvaluatesItsDefaultExpressionLazily() throws Exception {
+        JsonLogicValidationOptions validationOptions = new JsonLogicValidationOptions(
+                List.of("row", "meta"), null, false, null, null, true);
+        JsonNode valid = JSON.readTree("{\"var\":[\"row.missing\",{\"cat\":[\"a\",\"b\"]}]}");
+        assertTrue(engine.validateResult(valid, validationOptions).valid());
+        assertEquals("ab", engine.evaluate(valid, JSON.readTree("{\"row\":{}}"), options()));
+        assertEquals("present", engine.evaluate(
+                valid, JSON.readTree("{\"row\":{\"missing\":\"present\"}}"), options()));
+
+        JsonLogicValidationResult invalidDefault = engine.validateResult(
+                JSON.readTree("{\"var\":[\"row.present\",{\"unknown\":[]}]}") , validationOptions);
+        assertFalse(invalidDefault.valid());
+        assertEquals(JsonLogicIssueCode.RULE_OPERATOR_UNKNOWN, invalidDefault.issues().getFirst().code());
+        assertEquals("$.var[1]", invalidDefault.issues().getFirst().path());
+
+        for (String invalid : List.of("{\"var\":[]}", "{\"var\":[\"row.value\",1,2]}")) {
+            JsonLogicValidationResult result = engine.validateResult(JSON.readTree(invalid), validationOptions);
+            assertFalse(result.valid(), invalid);
+            assertEquals(JsonLogicIssueCode.RULE_ARITY_INVALID, result.issues().getFirst().code(), invalid);
+        }
+        JsonNode invalidPathType = JSON.readTree("{\"var\":[1,\"fallback\"]}");
+        assertEquals(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID,
+                engine.validateResult(invalidPathType, validationOptions).issues().getFirst().code());
+        PraxisJsonLogicException runtimeType = assertThrows(
+                PraxisJsonLogicException.class,
+                () -> engine.evaluate(invalidPathType, JSON.createObjectNode(), options()));
+        assertEquals(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID, runtimeType.getCode());
+    }
+
+    @Test void reportsGiantPathIndexesAndRegexBoundsAsStructuredErrors() throws Exception {
+        String giant = "9".repeat(100);
+        JsonLogicValidationOptions validationOptions = new JsonLogicValidationOptions(
+                List.of("row", "meta"), null, false, null, null, true);
+        JsonLogicValidationResult path = engine.validateResult(
+                JSON.readTree("{\"var\":\"row[" + giant + "]\"}"), validationOptions);
+        assertFalse(path.valid());
+        assertEquals(JsonLogicIssueCode.RULE_PATH_INVALID, path.issues().getFirst().code());
+        PraxisJsonLogicException pathRuntime = assertThrows(
+                PraxisJsonLogicException.class,
+                () -> eval("{\"var\":\"row[" + giant + "]\"}", "{\"row\":[]}"));
+        assertEquals(JsonLogicIssueCode.RULE_PATH_INVALID, pathRuntime.getCode());
+        String quotedNumericKey = "{\"var\":\"row[\\\"" + giant + "\\\"]\"}";
+        assertTrue(engine.validateResult(JSON.readTree(quotedNumericKey), validationOptions).valid());
+        assertEquals("kept", eval(quotedNumericKey, "{\"row\":{\"" + giant + "\":\"kept\"}}"));
+
+        String expression = "{\"matches\":[\"a\",\"a{" + giant + "}\"]}";
+        JsonLogicValidationResult regex = engine.validateResult(JSON.readTree(expression), validationOptions);
+        assertFalse(regex.valid());
+        assertEquals(JsonLogicIssueCode.RULE_REGEX_INVALID, regex.issues().getFirst().code());
+        PraxisJsonLogicException regexRuntime = assertThrows(
+                PraxisJsonLogicException.class, () -> eval(expression, "{}"));
+        assertEquals(JsonLogicIssueCode.RULE_REGEX_INVALID, regexRuntime.getCode());
+    }
+
     @Test void reduceAcceptsNullItemsAndValidationTraversesLiteralObjects() throws Exception {
         assertEquals(2,((Number)eval("{\"reduce\":[[null,2],{\"+\":[{\"var\":\"accumulator\"},{\"if\":[{\"===\":[{\"var\":\"current\"},null]},0,{\"var\":\"current\"}]}]},0]}","{}")).intValue());
         JsonLogicValidationResult invalid=engine.validateResult(JSON.readTree("{\"===\":[{\"left\":{\"unknown\":[]},\"right\":1},1]}"),new JsonLogicValidationOptions(List.of(),null,true,null,null,true));
