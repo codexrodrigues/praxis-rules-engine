@@ -83,14 +83,21 @@ registry versionado e evaluator service-level estao publicados. O repositorio
 canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para
 `main` passa por `mvn clean verify`. O POM de desenvolvimento permanece
 `0.0.1-SNAPSHOT`; a coordenada publica atual e
-`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.13`, com engine contract
-`1.3`. O Praxis API Quickstart consumiu essa coordenada diretamente do Maven
-Central e provou trust, proposta tipada, allowlist/schema no host e persistencia
-transacional. A `0.1.0-beta.7` nao deve ser adotada por hosts porque consolidava
-incorretamente `ALLOW` intermediario com `NOT_APPLICABLE` terminal.
+`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.14`, com engine contract
+`1.4`. O workflow oficial de publicação e o smoke downstream do Praxis API
+Quickstart usando somente o Maven Central foram concluídos. Essa prova cobre o
+consumo da coordenada pública, trust de extensões, proposta tipada,
+allowlist/schema no host e persistência transacional.
 
-O checkout atual prepara a próxima beta com engine contract `1.4`, conforme
-P2F-ADR-13. Essa fonte ainda não deve ser recomendada como coordenada publicada
-até o workflow oficial e o smoke downstream Central-only concluírem.
+A beta.13 permanece como o marco anterior das extensões protegidas. A beta.14
+endurece as fronteiras determinísticas descritas na P2F-ADR-13. A
+`0.1.0-beta.7` não deve ser adotada por hosts porque consolidava incorretamente
+`ALLOW` intermediário com `NOT_APPLICABLE` terminal.
 
-Consulte [architecture.md](docs/architecture.md), [operator-conformance-matrix.md](docs/operator-conformance-matrix.md), [release-readiness.md](docs/release-readiness.md) e o [pacote de ADRs da plataforma de regras](docs/p2f-rule-platform-adrs.md).
+Para uma explicação didática de como o motor se integra ao control plane e aos
+hosts corporativos, consulte o
+[guia de integração e evolução](docs/platform-integration-and-roadmap.md).
+Consulte também [architecture.md](docs/architecture.md),
+[operator-conformance-matrix.md](docs/operator-conformance-matrix.md),
+[release-readiness.md](docs/release-readiness.md) e o
+[pacote de ADRs da plataforma de regras](docs/p2f-rule-platform-adrs.md).
