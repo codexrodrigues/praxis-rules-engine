@@ -4,6 +4,32 @@
 
 O host resolve facts, fornece executores Java puros, compila uma definicao imutavel e avalia um plano deterministico. O engine nao le banco, nao consulta relogio do processo e nao aplica writes.
 
+```mermaid
+sequenceDiagram
+  participant CP as Config Starter
+  participant Catalog as Catalogo externo atestado
+  participant Plan as Planning registry
+  participant Host as Host de dominio
+  participant Engine as Rules Engine
+
+  CP->>Catalog: resolve coordenadas admitidas por escopo
+  Catalog-->>CP: allowlist e trust verificados
+  CP->>Plan: cria registry com catalogo externo
+  CP->>Plan: compara candidata com coordenadas admitidas
+  Plan-->>CP: candidata estruturalmente valida
+  Host->>CP: le head por tenant/environment e If-None-Match
+  CP-->>Host: snapshot imutavel + headEtag
+  Host->>Engine: compila com registry executavel
+  alt compilacao aprovada
+    Host->>Host: troca atomica e preserva last-known-good
+  else compilacao reprovada
+    Host->>Host: mantem last-known-good
+  end
+  Host->>Engine: avalia facts + nowUtc + userTimeZone
+  Engine-->>Host: decisao, diagnosticos e digests
+  Host->>Host: aplica autorizacao, transacao e efeitos
+```
+
 ```java
 RuleBindingExecutorRegistry registry = new RuleBindingExecutorRegistry(List.of(
         new EligibilityExecutor()));
@@ -13,7 +39,7 @@ RuleEvaluationResult result = new PraxisRuleSetEngine(registry)
         .evaluate(plan, facts, nowUtc, userTimeZone);
 ```
 
-`facts` deve ser um snapshot JSON ja autorizado e resolvido pelo host. Para regras temporais, `nowUtc` e `userTimeZone` sao obrigatorios; nunca delegue isso ao timezone ou relogio do processo.
+`facts` deve ser um snapshot JSON ja autorizado e resolvido pelo host. `nowUtc` e `userTimeZone` sao obrigatorios em toda avaliacao de RuleSet, inclusive quando a definicao atual nao usa operador temporal; nunca delegue isso ao timezone ou relogio do processo.
 
 ## Executores Java
 

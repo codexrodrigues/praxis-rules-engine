@@ -11,6 +11,7 @@ O Praxis Rules Engine e o runtime Java puro e deterministico da plataforma para 
 | Autorizar/publicar snapshots governados | [Guia de integracao](host-integration-guide.md#snapshots-governados) e a documentacao de `domain-rules` do Config Starter |
 | Consultar APIs, contratos e diagnosticos | [Referencia de contratos](contracts-reference.md) e [Diagnosticos e limites](diagnostics-and-limits.md) |
 | Criar extensoes Java ou transformacoes | [Extensoes e transformacoes](extensions-and-transformations.md) |
+| Entender a evidencia de testes | [Evidencia de validacao](validation-evidence.md) |
 | Alterar o dialeto JSON Logic | [RFC normativo no Praxis Core](../../praxis-ui-angular/projects/praxis-core/docs/rfc-json-logic-semantics.md), [matriz de operadores](operator-conformance-matrix.md) e corpus compartilhado |
 | Publicar uma versao | [Release](../RELEASING.md) e [estado de release](release-readiness.md) |
 
@@ -22,6 +23,23 @@ O Praxis Rules Engine e o runtime Java puro e deterministico da plataforma para 
 - O host possui facts, executores Java, autorizacao, transacoes, efeitos e observabilidade.
 
 Nao converta um erro tecnico em `DENY`, nao crie regras compartilhadas em telas e nao mova I/O, persistencia ou efeitos para este JAR.
+
+## Mapa conceitual
+
+```mermaid
+flowchart LR
+  Core["@praxisui/core\nRFC, operadores e corpus"] --> Engine
+  Engine["Praxis Rules Engine\ncontratos, planner e avaliador"]
+  Config["praxis-config-starter\nauthoring, publicacao e heads"] --> Engine
+  Host["Host de dominio\nfacts, executores e efeitos"] --> Engine
+  Engine --> Result["Resultado deterministico\n+ digests + diagnosticos"]
+  Config -. "snapshot governado" .-> Host
+  Result --> Host
+```
+
+As setas solidas mostram dependencia de contrato ou chamada de runtime. A seta
+tracejada representa a entrega de um snapshot governado: o Config Starter
+publica, mas o host compila e ativa a candidata com seu registry executavel.
 
 ## Validacao documental
 

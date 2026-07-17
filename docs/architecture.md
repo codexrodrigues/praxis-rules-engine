@@ -20,6 +20,17 @@
 
 `JsonNode -> limites estruturais -> validacao/preparacao -> avaliacao com budget -> valor publico + truthiness`.
 
+```mermaid
+flowchart LR
+  Expression["Expressao JSON Logic"] --> Limits["Limites estruturais"]
+  Limits --> Validation["Validacao\nshape, roots, aridade"]
+  Validation --> Evaluation["Avaliacao\nfacts + tempo congelado"]
+  Evaluation --> PublicValue["Valor publico + truthiness"]
+  Limits -->|"erro estavel"| Diagnostic["Diagnostico"]
+  Validation -->|"erro estavel"| Diagnostic
+  Evaluation -->|"erro estavel"| Diagnostic
+```
+
 O sentinel de ausencia nunca atravessa a API publica. Resultados ausentes sao materializados como `null`, mas `var` com default decide antes dessa materializacao.
 
 ## Extensao
@@ -42,6 +53,17 @@ prova que o envelope técnico mínimo do plano cabe nesses limites.
 `RuleSetDefinition -> validacao de compatibilidade e referencias -> DAG
 topologicamente ordenado -> RuleDecisionPlan -> avaliacao com facts congelados
 -> RuleEvaluationResult`.
+
+```mermaid
+flowchart LR
+  Definition["RuleSetDefinition\nslots + bindings + coordenadas"] --> Compiler["PraxisRulePlanCompiler"]
+  Registry["Registry\ncoordenadas exatas"] --> Compiler
+  Compiler --> Plan["RuleDecisionPlan\nDAG deterministico"]
+  Facts["Facts congelados\nnowUtc + userTimeZone"] --> Evaluator["PraxisRuleSetEngine"]
+  Plan --> Evaluator
+  ExecutableRegistry["Registry executavel\ndo host"] --> Evaluator
+  Evaluator --> Decision["ALLOW | DENY | NOT_APPLICABLE\nINCONCLUSIVE | TECHNICAL_ERROR"]
+```
 
 Slots singulares usam `SINGLE_RESULT`; slots multiplos declaram explicitamente
 `DENY_OVERRIDES`. Chaves e versoes de executores Java sao exatas. O plano fixa
