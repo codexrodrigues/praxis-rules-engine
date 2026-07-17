@@ -21,5 +21,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Validate documentation links
+        run: python3 scripts/validate_doc_links.py
       - name: Verify
         run: mvn --batch-mode --no-transfer-progress clean verify

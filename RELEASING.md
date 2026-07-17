@@ -31,5 +31,16 @@
 5. Only after the availability probe succeeds may `praxis-metadata-starter` or
    `praxis-api-quickstart` consume the public coordinate.
 
-The recommended first public channel is `0.1.0-beta.1`, because downstream
-integration has not yet been proven from Maven Central.
+## Current public line
+
+The current documented public coordinate is
+`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.12`, with engine
+contract `1.2`. It was consumed by `praxis-api-quickstart` directly from Maven
+Central. `0.1.0-beta.13` / contract `1.3` is a candidate on `main` and must not
+be recommended until the official workflow publishes it and downstream proof is
+recorded. See [release readiness](docs/release-readiness.md) and the
+[contract reference](docs/contracts-reference.md#compatibilidade-publicada).
+
+Compatible work remains on the active `0.1.0-beta.*` line. A new major requires
+an explicitly governed breaking-change plan, consumer impact map, migration
+guidance and downstream validation.

@@ -6,7 +6,7 @@
 
 Implementar no `praxis-rules-engine` o runtime Java canonico de Json Logic da plataforma Praxis, com paridade comportamental com o runtime TypeScript ja existente em:
 
-- [praxis-json-logic.service.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic.service.ts)
+ - [praxis-json-logic.service.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic.service.ts)
 
 Este documento existe para que a implementacao Java siga o contrato de plataforma correto, em vez de introduzir mais um dialeto local.
 
@@ -15,15 +15,15 @@ Este documento existe para que a implementacao Java siga o contrato de plataform
 ### Ja existe
 
 - dialeto normativo publicado em:
-  - [rfc-json-logic-semantics.md](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/docs/rfc-json-logic-semantics.md)
+   - [rfc-json-logic-semantics.md](../../praxis-ui-angular/projects/praxis-core/docs/rfc-json-logic-semantics.md)
 - runtime TypeScript canonico em:
-  - [praxis-json-logic.service.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic.service.ts)
+   - [praxis-json-logic.service.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic.service.ts)
 - validacao semantica canonica em:
-  - [praxis-json-logic.service.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic.service.ts)
+  - [praxis-json-logic.service.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic.service.ts)
 - corpus de conformidade versionado em:
-  - [conformance-fixtures.json](/D:/Developer/praxis-plataform/praxis-ui-angular/docs/json-logic-conformance/conformance-fixtures.json)
+   - [conformance-fixtures.json](../../praxis-ui-angular/docs/json-logic-conformance/conformance-fixtures.json)
 - consumo do corpus em teste do lado TypeScript:
-  - [praxis-json-logic-conformance.spec.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic-conformance.spec.ts)
+   - [praxis-json-logic-conformance.spec.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic-conformance.spec.ts)
 
 ### Implementado nesta linha
 
@@ -45,7 +45,7 @@ Este documento existe para que a implementacao Java siga o contrato de plataform
 
 O runtime Java deve nascer neste modulo:
 
-- [praxis-rules-engine](/D:/Developer/praxis-plataform/praxis-rules-engine/README.md)
+ - [praxis-rules-engine](../README.md)
 
 Nao implementar o runtime definitivo em:
 
@@ -120,7 +120,7 @@ Operadores baseline obrigatorios:
 
 O runtime Java deve consumir o mesmo corpus versionado em:
 
-- [conformance-fixtures.json](/D:/Developer/praxis-plataform/praxis-ui-angular/docs/json-logic-conformance/conformance-fixtures.json)
+- [conformance-fixtures.json](../../praxis-ui-angular/docs/json-logic-conformance/conformance-fixtures.json)
 
 Sem isso, a plataforma nao pode declarar paridade executavel FE/BE.
 

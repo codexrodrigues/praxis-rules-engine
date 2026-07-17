@@ -10,7 +10,7 @@ Mapear, do lado Angular, quais classes, serviços, componentes e contratos ja de
 
 ### Runtime principal
 
-- [praxis-json-logic.service.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic.service.ts)
+- [praxis-json-logic.service.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic.service.ts)
 
 Responsabilidades atuais:
 
@@ -24,13 +24,13 @@ Responsabilidades atuais:
 
 ### Modelos e tipos
 
-- [json-logic.model.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/models/rules/json-logic.model.ts)
-- [json-logic-runtime.model.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/models/rules/json-logic-runtime.model.ts)
+- [json-logic.model.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/models/rules/json-logic.model.ts)
+- [json-logic-runtime.model.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/models/rules/json-logic-runtime.model.ts)
 
 ### Corpus de conformidade
 
-- [conformance-fixtures.json](/D:/Developer/praxis-plataform/praxis-ui-angular/docs/json-logic-conformance/conformance-fixtures.json)
-- [praxis-json-logic-conformance.spec.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic-conformance.spec.ts)
+- [conformance-fixtures.json](../../praxis-ui-angular/docs/json-logic-conformance/conformance-fixtures.json)
+- [praxis-json-logic-conformance.spec.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/services/praxis-json-logic-conformance.spec.ts)
 
 ## Consumidores Angular que Ja Dependem do Contrato
 
@@ -38,16 +38,16 @@ Responsabilidades atuais:
 
 #### Runtime de regras
 
-- [form-rules.service.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-dynamic-form/src/lib/services/form-rules.service.ts)
+- [form-rules.service.ts](../../praxis-ui-angular/projects/praxis-dynamic-form/src/lib/services/form-rules.service.ts)
 
 #### Editor de regras
 
-- [rules-editor.component.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-dynamic-form/src/lib/rules-editor/rules-editor.component.ts)
-- [rules-editor.component.spec.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-dynamic-form/src/lib/rules-editor/rules-editor.component.spec.ts)
+- [rules-editor.component.ts](../../praxis-ui-angular/projects/praxis-dynamic-form/src/lib/rules-editor/rules-editor.component.ts)
+- [rules-editor.component.spec.ts](../../praxis-ui-angular/projects/praxis-dynamic-form/src/lib/rules-editor/rules-editor.component.spec.ts)
 
 #### Contratos de layout
 
-- [form-layout.model.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/models/form/form-layout.model.ts)
+- [form-layout.model.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/models/form/form-layout.model.ts)
 
 Campos relevantes:
 
@@ -59,17 +59,17 @@ Campos relevantes:
 
 #### Runtime/consumo de condicoes
 
-- [praxis-table.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-table/src/lib/praxis-table.ts)
-- [praxis-table-toolbar.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-table/src/lib/praxis-table-toolbar.ts)
+- [praxis-table.ts](../../praxis-ui-angular/projects/praxis-table/src/lib/praxis-table.ts)
+- [praxis-table-toolbar.ts](../../praxis-ui-angular/projects/praxis-table/src/lib/praxis-table-toolbar.ts)
 
 #### Editor de regras
 
-- [table-rules-editor.component.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-table/src/lib/rules-editor/table-rules-editor.component.ts)
-- [table-rules-editor.component.spec.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-table/src/lib/rules-editor/table-rules-editor.component.spec.ts)
+- [table-rules-editor.component.ts](../../praxis-ui-angular/projects/praxis-table/src/lib/rules-editor/table-rules-editor.component.ts)
+- [table-rules-editor.component.spec.ts](../../praxis-ui-angular/projects/praxis-table/src/lib/rules-editor/table-rules-editor.component.spec.ts)
 
 #### Modelos relevantes
 
-- [table-config-v2.model.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/models/table-config-v2.model.ts)
+- [table-config-v2.model.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/models/table-config-v2.model.ts)
 
 Campos relevantes:
 
@@ -81,11 +81,11 @@ Campos relevantes:
 
 #### Executor de link
 
-- [link-executor.service.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/composition/link-executor.service.ts)
+- [link-executor.service.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/composition/link-executor.service.ts)
 
 #### Modelo de composicao
 
-- [composition-link.model.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/models/composition-link.model.ts)
+- [composition-link.model.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/models/composition-link.model.ts)
 
 Campos relevantes:
 
@@ -102,8 +102,8 @@ Campos relevantes:
 
 #### Validacao de respostas
 
-- [ai-response-validator.service.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-ai/src/lib/core/services/ai-response-validator.service.ts)
-- [ai-response-validator.service.spec.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-ai/src/lib/core/services/ai-response-validator.service.spec.ts)
+- [ai-response-validator.service.ts](../../praxis-ui-angular/projects/praxis-ai/src/lib/core/services/ai-response-validator.service.ts)
+- [ai-response-validator.service.spec.ts](../../praxis-ui-angular/projects/praxis-ai/src/lib/core/services/ai-response-validator.service.spec.ts)
 
 Papel:
 
@@ -112,9 +112,9 @@ Papel:
 
 ### 5. Schema normalizer / metadata-driven core
 
-- [schema-normalizer.service.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/services/schema-normalizer.service.ts)
-- [field-definition-mapper.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/helpers/field-definition-mapper.ts)
-- [component-metadata.interface.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-core/src/lib/models/component-metadata.interface.ts)
+- [schema-normalizer.service.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/services/schema-normalizer.service.ts)
+- [field-definition-mapper.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/helpers/field-definition-mapper.ts)
+- [component-metadata.interface.ts](../../praxis-ui-angular/projects/praxis-core/src/lib/models/component-metadata.interface.ts)
 
 Papel:
 
@@ -160,11 +160,11 @@ O runtime Java nao deve fazer somente avaliacao. Ele precisa expor validacao sem
 
 Estes componentes nao devem ser reimplementados no backend, mas precisam guiar o que o backend aceita:
 
-- [rules-editor.component.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-dynamic-form/src/lib/rules-editor/rules-editor.component.ts)
-- [table-rules-editor.component.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-table/src/lib/rules-editor/table-rules-editor.component.ts)
-- [columns-config-editor.component.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-table/src/lib/columns-config-editor/columns-config-editor.component.ts)
-- [rule-editor.component.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-visual-builder/src/lib/components/rule-editor.component.ts)
-- [rule-definition.component.ts](/D:/Developer/praxis-plataform/praxis-ui-angular/projects/praxis-visual-builder/src/lib/components/rule-definition.component.ts)
+- [rules-editor.component.ts](../../praxis-ui-angular/projects/praxis-dynamic-form/src/lib/rules-editor/rules-editor.component.ts)
+- [table-rules-editor.component.ts](../../praxis-ui-angular/projects/praxis-table/src/lib/rules-editor/table-rules-editor.component.ts)
+- [columns-config-editor.component.ts](../../praxis-ui-angular/projects/praxis-table/src/lib/columns-config-editor/columns-config-editor.component.ts)
+- [rule-editor.component.ts](../../praxis-ui-angular/projects/praxis-visual-builder/src/lib/components/rule-editor.component.ts)
+- [rule-definition.component.ts](../../praxis-ui-angular/projects/praxis-visual-builder/src/lib/components/rule-definition.component.ts)
 
 O backend precisa aceitar o mesmo AST que esses componentes produzem.
 
