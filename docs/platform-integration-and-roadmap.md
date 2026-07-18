@@ -124,6 +124,11 @@ integrais.
 - Publicação: workflow oficial por tag, com artefatos assinados no Maven Central.
 - Prova downstream: host de referência consumindo apenas a coordenada pública.
 
+A beta.14 permanece disponível, mas não é recomendada para novos consumidores:
+ela anuncia hash diferente dos bytes do corpus empacotado. A fonte atual prepara
+a beta.15 corretiva; somente sua publicação e um novo smoke downstream poderão
+restaurar a recomendação pública do contract `1.4`.
+
 O `pom.xml` do branch de desenvolvimento continua em `0.0.1-SNAPSHOT`; isso não
 altera a coordenada pública recomendada.
 

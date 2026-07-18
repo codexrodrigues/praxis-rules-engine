@@ -84,13 +84,19 @@ canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para
 `main` passa por `mvn clean verify`. O POM de desenvolvimento permanece
 `0.0.1-SNAPSHOT`; a coordenada publica atual e
 `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.14`, com engine contract
-`1.4`. O workflow oficial de publicação e o smoke downstream do Praxis API
-Quickstart usando somente o Maven Central foram concluídos. Essa prova cobre o
+`1.4`. A auditoria posterior comprovou que essa release anuncia o hash antigo
+do corpus apesar de empacotar o corpus de 2026-07-17; por isso ela não deve ser
+adotada por novos consumidores. A correção está preparada para a próxima beta
+da linha ativa. O workflow oficial de publicação e o smoke downstream do
+Praxis API Quickstart usando somente o Maven Central foram concluídos para a
+beta.14, mas não cobriam essa invariável. A prova anterior cobre o
 consumo da coordenada pública, trust de extensões, proposta tipada,
 allowlist/schema no host e persistência transacional.
 
 A beta.13 permanece como o marco anterior das extensões protegidas. A beta.14
-endurece as fronteiras determinísticas descritas na P2F-ADR-13. A
+endurece as fronteiras determinísticas descritas na P2F-ADR-13, mas possui o
+drift de hash/corpus acima. A próxima beta corretiva preserva contract `1.4` e
+deve ser comprovada novamente no downstream. A
 `0.1.0-beta.7` não deve ser adotada por hosts porque consolidava incorretamente
 `ALLOW` intermediário com `NOT_APPLICABLE` terminal.
 

@@ -76,12 +76,12 @@ JAR resolvido e QL-09 provou attestation no plano/resultado, bloqueio de
 protected guard e substituição entre compilação e avaliação. IAM, PKI e
 revogação do ambiente corporativo-alvo permanecem gates separados.
 
-## Próxima beta — hardening determinístico / contract 1.4
+## Próxima beta corretiva — convergência de corpus / contract 1.4
 
-P2F-ADR-13 altera comportamento observável ao rejeitar versão divergente do
-dialeto, intents sem dependência direta de negócio e resultados agregados acima
-dos limites. Também converge o default composto de `var` entre TypeScript e Java.
-Por isso a fonte candidata usa engine contract `1.4`, preservando integralmente
-o trust de `1.3`. A linha de publicação continua `0.1.0-beta.*`; a versão prevista
-é `0.1.0-beta.14`, condicionada a `clean verify`, corpus byte a byte e smoke
-downstream Central-only.
+P2F-ADR-13 foi publicado na beta.14, mas essa release anunciou o hash antigo
+enquanto empacotou o corpus novo. A fonte corretiva mantém engine contract
+`1.4`, converge o default composto de `var` entre TypeScript e Java e adiciona
+regressão executável para bytes/hash. O trust de `1.3` permanece integralmente
+preservado. A linha continua `0.1.0-beta.*`; a próxima versão disponível é
+`0.1.0-beta.15`, condicionada a `clean verify`, corpus byte a byte, hash
+anunciado idêntico e smoke downstream Central-only.

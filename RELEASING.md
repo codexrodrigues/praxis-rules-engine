@@ -34,11 +34,13 @@
 ## Current public line
 
 The current documented public coordinate is
-`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.13`, with engine
-contract `1.3`. It was consumed by `praxis-api-quickstart` directly from Maven
-Central with protected-extension trust evidence. The current source prepares
-the next beta with engine contract `1.4`; it must not be recommended until the
-official workflow publishes it and downstream proof is recorded. See
+`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.14`, with engine
+contract `1.4`. It was consumed by `praxis-api-quickstart` directly from Maven
+Central, but a later audit proved that its advertised corpus hash differs from
+the packaged corpus bytes. Do not recommend beta.14 to new consumers. The
+current source prepares the corrective beta on the same `0.1.0-beta.*` line;
+it must not be recommended until the official workflow publishes it and
+downstream proof verifies the packaged bytes and advertised hash. See
 [release readiness](docs/release-readiness.md) and the
 [contract reference](docs/contracts-reference.md#compatibilidade-publicada).
 
