@@ -20,7 +20,7 @@ public record RuleRuntimeCompatibility(
     public static final String JSON_LOGIC_DIALECT_VERSION = "1.0";
     /** SHA-256 of the packaged and Angular-owned normative corpus. */
     public static final String JSON_LOGIC_CORPUS_SHA256 =
-            "1B3DAD7A5030B5CC4CFB75E8A96DFB2576FC56A0C6B878BD6A2C6F60FA377181";
+            "E890925C7306A2646CF86443C29ABDDEF0C0645C6228F1DE4A8740E45253D181";
 
     /** Validates explicit compatibility coordinates. */
     public RuleRuntimeCompatibility {

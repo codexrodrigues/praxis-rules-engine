@@ -1,5 +1,6 @@
 package org.praxisplatform.rules.jsonlogic;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -10,11 +11,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HexFormat;
 import java.util.List;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import org.junit.jupiter.api.Test;
+import org.praxisplatform.rules.contract.RuleRuntimeCompatibility;
 import org.praxisplatform.rules.jsonlogic.conformance.JsonLogicConformanceFixtureLoader;
 import org.praxisplatform.rules.jsonlogic.model.JsonLogicEvaluationOptions;
 import org.praxisplatform.rules.jsonlogic.model.JsonLogicEvaluationResult;
@@ -27,16 +31,24 @@ class PraxisJsonLogicConformanceTest {
     private final PraxisJsonLogicEngine engine = new PraxisJsonLogicEngine();
 
     @Test
+    void packagedCorpusHashMustMatchRuntimeCompatibility() throws Exception {
+        assertEquals(
+                RuleRuntimeCompatibility.JSON_LOGIC_CORPUS_SHA256,
+                HexFormat.of().withUpperCase().formatHex(
+                        MessageDigest.getInstance("SHA-256").digest(packagedCorpus())));
+    }
+
+    @Test
     void packagedCorpusMustMatchAngularCanonicalCorpusWhenBuiltInPlatformWorkspace() throws IOException {
         String configuredPath = System.getProperty("praxis.angular.corpus.path");
         Path angular = configuredPath == null || configuredPath.isBlank()
                 ? Path.of("..", "praxis-ui-angular", "docs", "json-logic-conformance", "conformance-fixtures.json").normalize()
                 : Path.of(configuredPath).normalize();
         if (!Files.exists(angular)) return; // isolated Maven builds prove only the packaged resource
-        try (InputStream packaged = getClass().getResourceAsStream("/org/praxisplatform/rules/jsonlogic/conformance-fixtures.json")) {
-            assertNotNull(packaged);
-            assertEquals(MAPPER.readTree(Files.readString(angular)), MAPPER.readTree(packaged), "packaged corpus drifted from the normative Angular corpus");
-        }
+        assertArrayEquals(
+                Files.readAllBytes(angular),
+                packagedCorpus(),
+                "packaged corpus drifted byte-for-byte from the normative Angular corpus");
     }
 
     @Test
@@ -147,5 +159,13 @@ class PraxisJsonLogicConformanceTest {
             return true;
         }
         return left.equals(right);
+    }
+
+    private byte[] packagedCorpus() throws IOException {
+        try (InputStream packaged = getClass().getResourceAsStream(
+                "/org/praxisplatform/rules/jsonlogic/conformance-fixtures.json")) {
+            assertNotNull(packaged);
+            return packaged.readAllBytes();
+        }
     }
 }

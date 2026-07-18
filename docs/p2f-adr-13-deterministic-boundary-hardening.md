@@ -1,5 +1,9 @@
 # P2F-ADR-13 — hardening determinístico das fronteiras
 
+> Atualização de 2026-07-18: a beta.14 publicou este contract, porém com hash
+> anunciado diferente do corpus empacotado. A fonte corretiva mantém contract
+> `1.4`, adiciona regressão byte/hash e aguarda beta.15 + smoke downstream.
+
 - Estado: `ACCEPTED_FOR_ENGINE_1_4`
 - Data: 2026-07-17
 - Classificação: `arquitetural`, `contrato-publico` e `transversal`
