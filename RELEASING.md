@@ -22,6 +22,10 @@
    mvn clean verify
    ```
 
+   For a release candidate, require both Linux and Windows CI jobs to pass.
+   The JSON Logic corpus is a byte-addressed contract, so a green build on only
+   one checkout policy is not sufficient release evidence.
+
 3. Use **Release Praxis Rules Engine** with `workflow_dispatch`, executing it
    on `main`, with `create_tag=true` and either an explicit `version` or a
    `bump`/`preid` pair. The workflow creates the annotated `v<semver>` tag.
@@ -33,14 +37,15 @@
 
 ## Current public line
 
-The current documented public coordinate is
-`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.14`, with engine
-contract `1.4`. It was consumed by `praxis-api-quickstart` directly from Maven
-Central, but a later audit proved that its advertised corpus hash differs from
-the packaged corpus bytes. Do not recommend beta.14 to new consumers. The
-current source prepares the corrective beta on the same `0.1.0-beta.*` line;
-it must not be recommended until the official workflow publishes it and
-downstream proof verifies the packaged bytes and advertised hash. See
+The latest published coordinate is
+`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.15`, with engine
+contract `1.4`. Beta.14 advertised a corpus hash different from its packaged
+bytes. Beta.15 corrected that source-level drift, but a later audit reproduced
+a Windows checkout failure because the repository did not govern LF/CRLF.
+Neither beta.14 nor beta.15 is a green cross-platform baseline for new
+consumers. The current source prepares a corrective beta on the same
+`0.1.0-beta.*` line; it must not be recommended until Linux and Windows CI pass
+and downstream proof verifies the published bytes and advertised hash. See
 [release readiness](docs/release-readiness.md) and the
 [contract reference](docs/contracts-reference.md#compatibilidade-publicada).
 

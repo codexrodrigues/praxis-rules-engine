@@ -1,0 +1,7 @@
+# Keep repository text deterministic across Linux and Windows checkouts.
+* text=auto eol=lf
+
+# Preserve native Windows line endings for scripts executed by cmd/PowerShell.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf

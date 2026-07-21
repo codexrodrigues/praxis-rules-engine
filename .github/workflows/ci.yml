@@ -25,3 +25,17 @@ jobs:
         run: python3 scripts/validate_doc_links.py
       - name: Verify
         run: mvn --batch-mode --no-transfer-progress clean verify
+
+  verify-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Verify deterministic checkout and runtime
+        run: mvn --batch-mode --no-transfer-progress clean verify

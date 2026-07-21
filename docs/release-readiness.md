@@ -76,12 +76,18 @@ JAR resolvido e QL-09 provou attestation no plano/resultado, bloqueio de
 protected guard e substituição entre compilação e avaliação. IAM, PKI e
 revogação do ambiente corporativo-alvo permanecem gates separados.
 
-## Próxima beta corretiva — convergência de corpus / contract 1.4
+## Beta.15 e próxima beta corretiva — convergência de corpus / contract 1.4
 
 P2F-ADR-13 foi publicado na beta.14, mas essa release anunciou o hash antigo
-enquanto empacotou o corpus novo. A fonte corretiva mantém engine contract
-`1.4`, converge o default composto de `var` entre TypeScript e Java e adiciona
-regressão executável para bytes/hash. O trust de `1.3` permanece integralmente
-preservado. A linha continua `0.1.0-beta.*`; a próxima versão disponível é
-`0.1.0-beta.15`, condicionada a `clean verify`, corpus byte a byte, hash
-anunciado idêntico e smoke downstream Central-only.
+enquanto empacotou o corpus novo. A beta.15 manteve engine contract `1.4`,
+convergiu o default composto de `var` entre TypeScript e Java e adicionou
+regressão executável para bytes/hash. O trust de `1.3` permaneceu integralmente
+preservado.
+
+A publicação da beta.15 existe no Maven Central, porém sua prova não é
+reprodutível em checkout Windows com `core.autocrlf=true`: o repositório não
+fixava LF e o teste do hash observava bytes CRLF. Por isso, beta.15 não deve ser
+recomendada como baseline verde. A correção mantém a comparação byte a byte,
+versiona a política de finais de linha e adiciona `clean verify` no Windows CI.
+Ela deve seguir na mesma linha compatível como próxima `0.1.0-beta.*`, somente
+após gates Linux/Windows e smoke downstream Central-only.

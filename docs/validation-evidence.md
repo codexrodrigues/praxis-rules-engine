@@ -63,3 +63,16 @@ mvn "-Dtest=PraxisJsonLogicConformanceTest,PraxisJsonLogicEngineTest,PraxisRuleS
 
 Essa execucao valida os contratos ilustrados nesta pagina. Ela nao substitui
 `mvn clean verify`, nem a prova downstream contra uma coordenada Maven publica.
+
+## Reprodutibilidade entre sistemas operacionais
+
+A auditoria de 2026-07-21 reproduziu uma falha da tag `v0.1.0-beta.15` no
+Windows: sem `.gitattributes`, `core.autocrlf=true` alterava os bytes do corpus
+empacotado e invalidava o SHA-256 normativo. A correcao preserva o gate
+byte a byte, fixa LF para textos do repositorio e executa `mvn clean verify`
+tambem em `windows-latest`. Um verde apenas em Linux nao e evidencia suficiente
+para declarar reprodutivel uma release cujo contrato inclui bytes e hash.
+
+Com a política LF aplicada, `mvn clean verify` em Java 21 no Windows executou
+62 testes, sem falhas, erros ou skips. A paridade focal também foi executada
+com `praxis.angular.corpus.path` apontando explicitamente para o corpus Angular.
