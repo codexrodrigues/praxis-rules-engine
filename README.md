@@ -81,7 +81,7 @@ Maven 3.9+ e Java exatamente 21 sao impostos pelo Enforcer. O build gera JAR bin
 O runtime JSON Logic, contratos RuleSet/snapshot, planner deterministico,
 registry versionado e evaluator service-level pertencem ao repositorio canonico
 `codexrodrigues/praxis-rules-engine`. Todo push ou pull request para `main` passa
-por `mvn clean verify`. O POM de desenvolvimento permanece `0.0.1-SNAPSHOT`.
+por `mvn clean verify`. O POM registra a coordenada da versão preparada para publicação.
 
 A coordenada pública e seus gates estão registrados em
 [release readiness](docs/release-readiness.md). Historicamente, a beta.14 anunciou
@@ -117,3 +117,18 @@ limita a transferência por contexto e por avaliação antes de copiar valores.
 RuleSets 1.4 são rejeitados; o corpus/dialeto não muda. A adoção nos hosts exige a
 coordenada pública verificada e provas próprias de integração; publicação do
 engine não comprova o exemplo financeiro nem a UI.
+
+
+## Parametrização governada — fonte contract 1.6
+
+`PARAMETERIZE` agora resolve somente valores escalares admitidos por um
+`DecisionSlot.parameterTemplate` de produto com identidade/versão exatas.
+`RuleParameterResolver` publica a resolução pura para Config; bindings source
+não podem fornecer expressão/executor ou alterar outcomes/facts obrigatórios.
+O [ADR-03](docs/p2f-adr-03-composition-and-overrides.md) documenta schema,
+defaults, sites literais, limites, diagnósticos e a migração beta limpa.
+
+Esta fonte exige engine contract `1.6`, preservando dialeto/corpus JSON Logic.
+A coordenada deste incremento é `0.1.0-beta.17`; a disponibilidade no Maven Central
+deve ser confirmada antes da adoção downstream. Snapshots 1.5 e PARAMETERIZE antigo precisam de
+nova publicação governada compatível; Java PARAMETERIZE não é suportado.

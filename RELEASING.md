@@ -39,9 +39,9 @@
 
 The current public coordinate and its publication evidence are recorded in
 [release readiness](docs/release-readiness.md). The active release line remains
-`0.1.0-beta.*`; the source implements engine contract `1.5`. The runtime contract
+`0.1.0-beta.*`; the source implements engine contract `1.6`. The runtime contract
 is an exact compatibility boundary: 1.4 compositions require governed migration
-and new approval before execution with 1.5. Publication does not establish host
+and new approval before execution with 1.6. Publication does not establish host
 adoption. See the [contract reference](docs/contracts-reference.md#compatibilidade-publicada).
 
 Beta.14 advertised a corpus hash different from its packaged bytes. Beta.15

@@ -167,7 +167,7 @@ class TypedTransformationContractTest {
         DecisionBinding jsonBinding = new DecisionBinding(
                 "request.transform", "request.transform", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.jsonLogic(JSON.readTree("{\"===\":[true,true]}")),
-                List.of(), 10, true, RuleDecision.NOT_APPLICABLE, "NO_TRANSFORM", List.of());
+                List.of(), 10, true, RuleDecision.NOT_APPLICABLE, "NO_TRANSFORM", List.of(), null);
         RuleSetDefinition definition = baseDefinition(List.of(slot), List.of(jsonBinding));
 
         RulePlanException failure = assertThrows(RulePlanException.class,
@@ -179,7 +179,7 @@ class TypedTransformationContractTest {
         DecisionBinding javaBinding = new DecisionBinding(
                 "request.transform", "request.transform", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.java("benefits:amount-transform", "1.0.0"),
-                List.of(), 10, true, null, null, List.of());
+                List.of(), 10, true, null, null, List.of(), null);
         RuleSetDefinition missingDependency = baseDefinition(List.of(slot), List.of(javaBinding));
         RuleBindingExecutorRegistry registry = registry(new AtomicInteger(), List.of(draft(
                 "normalize.amount", "2000.00")));
@@ -212,8 +212,8 @@ class TypedTransformationContractTest {
     }
 
     @Test
-    void publishesTheCurrentRuleSetContractAsEngineBaselineOnePointFive() {
-        assertEquals("1.5", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
+    void publishesTheCurrentRuleSetContractAsEngineBaselineOnePointSix() {
+        assertEquals("1.6", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
     }
 
     @Test
@@ -294,11 +294,11 @@ class TypedTransformationContractTest {
         DecisionBinding decision = new DecisionBinding(
                 "request.eligible", "request.eligible", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.jsonLogic(JSON.readTree("{\"===\":[true,true]}")),
-                List.of(), 10, true, RuleDecision.DENY, "NOT_ELIGIBLE", List.of());
+                List.of(), 10, true, RuleDecision.DENY, "NOT_ELIGIBLE", List.of(), null);
         DecisionBinding transform = new DecisionBinding(
                 "request.amount-normalization", "request.amount-normalization", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.java("benefits:amount-transform", "1.0.0"),
-                List.of("request.eligible"), 20, true, null, null, List.of("request.recommendedAmount"));
+                List.of("request.eligible"), 20, true, null, null, List.of("request.recommendedAmount"), null);
         return baseDefinition(List.of(decisionSlot, transformSlot), List.of(decision, transform));
     }
 
@@ -307,7 +307,7 @@ class TypedTransformationContractTest {
         DecisionBinding binding = new DecisionBinding(
                 "request.transform", "request.transform", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.java("benefits:stage-transform", "1.0.0"),
-                List.of(), 10, true, null, null, List.of());
+                List.of(), 10, true, null, null, List.of(), null);
         return baseDefinition(List.of(slot), List.of(binding));
     }
 
@@ -320,7 +320,7 @@ class TypedTransformationContractTest {
     private DecisionSlot slot(String key, DecisionStage stage) {
         return new DecisionSlot(
                 key, stage, SlotCardinality.SINGLE,
-                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT);
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null);
     }
 
     private TransformationDraft draft(String key, String after) {

@@ -62,3 +62,20 @@ compatibilidade, budgets e erros sem resultados parciais. Consumidores devem
 adotar uma release oficial 1.5 e composições aprovadas compatíveis; esta fonte
 não é prova de disponibilidade Maven. O construtor do contexto mudou nesta
 linha beta limpa, sem overload de compatibilidade que esconda o novo canal.
+
+
+## Parâmetros de produto (fonte 1.6)
+
+`DecisionSlot.parameterTemplate` contém `RuleParameterTemplate` e os
+`RuleParameterDefinition` do produto. `DecisionBinding.parameterization`
+contém `RuleParameterization(templateKey, templateVersion, values)` apenas para
+CUSTOMER PARAMETERIZE; o source não contém executor/outcome/facts próprios.
+O compilador deriva a execução e preserva o source no snapshot.
+
+`RuleParameterResolver.resolve(template, values)` retorna
+`RuleParameterResolution(executor, effectiveValues, origins)` sem RuleSet ou
+I/O. A enum `RuleParameterValueOrigin` distingue DECLARED/DEFAULT. Bounds,
+enum, tipos, unidades, read-only, null, ausência, sites e falhas fechadas são
+normativos no [ADR-03](p2f-adr-03-composition-and-overrides.md). A fonte 1.6
+rejeita snapshots 1.5; a publicação Maven/adaptação dos consumidores é um gate
+separado. O dialeto e corpus permanecem 1.0/inalterados.

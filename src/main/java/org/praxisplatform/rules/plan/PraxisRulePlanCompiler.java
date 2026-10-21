@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.HashSet;
-import java.util.TreeMap;
 import org.praxisplatform.rules.contract.CompositionPolicy;
 import org.praxisplatform.rules.contract.DecisionBinding;
 import org.praxisplatform.rules.contract.DecisionAggregationPolicy;
@@ -32,6 +31,9 @@ import org.praxisplatform.rules.jsonlogic.internal.PraxisPath;
 import org.praxisplatform.rules.jsonlogic.model.JsonLogicValidationOptions;
 import org.praxisplatform.rules.jsonlogic.model.JsonLogicLimits;
 import org.praxisplatform.rules.runtime.RuleBindingExecutorRegistry;
+import org.praxisplatform.rules.parameters.RuleParameterResolver;
+import org.praxisplatform.rules.contract.RuleParameterTemplate;
+import org.praxisplatform.rules.contract.RuleParameterization;
 
 /** Stateless compiler that validates and deterministically orders a RuleSet definition. */
 public final class PraxisRulePlanCompiler {
@@ -75,7 +77,8 @@ public final class PraxisRulePlanCompiler {
         validateCompatibility(definition);
         enforceLimits(definition);
         Map<String, DecisionSlot> slots = indexSlots(definition.slots());
-        Map<String, DecisionBinding> bindings = indexEnabledBindings(definition.bindings());
+        Map<String, DecisionBinding> sourceBindings = indexEnabledBindings(definition.bindings());
+        Map<String, DecisionBinding> bindings = materializeParameters(definition, slots, sourceBindings);
         validateBindings(definition, slots, bindings);
         List<DecisionBinding> ordered = topologicalOrder(slots, bindings);
         RuleDecisionPlan plan = new RuleDecisionPlan(
@@ -86,6 +89,65 @@ public final class PraxisRulePlanCompiler {
                 digest(definition, ordered));
         validateMinimalResultEnvelope(plan);
         return plan;
+    }
+
+    private Map<String, DecisionBinding> materializeParameters(
+            RuleSetDefinition definition,
+            Map<String, DecisionSlot> slots, Map<String, DecisionBinding> sourceBindings) {
+        for (DecisionSlot slot : slots.values().stream()
+                .sorted(Comparator.comparing(DecisionSlot::slotKey)).toList()) {
+            if (slot.overridePolicy() == OverridePolicy.PARAMETERIZABLE) {
+                RuleParameterResolver.validateTemplate(slot.parameterTemplate());
+                var template = slot.parameterTemplate();
+                var product = new DecisionBinding("template:" + slot.slotKey(), slot.slotKey(),
+                        DecisionSource.PRODUCT, null, template.executor(), List.of(), 0, true,
+                        template.falseDecision(), template.falseReasonCode(), template.requiredFactPaths(), null);
+                validateExecutor(definition, product);
+                validateRequiredFacts(definition, product);
+            } else if (slot.parameterTemplate() != null) {
+                throw failure(RulePlanIssueCode.PLAN_PARAMETER_TEMPLATE_INVALID,
+                        "Only PARAMETERIZABLE slots may publish a parameter template", null);
+            }
+        }
+        Map<String, DecisionBinding> derived = new LinkedHashMap<>();
+        for (DecisionBinding binding : sourceBindings.values().stream()
+                .sorted(Comparator.comparing(DecisionBinding::bindingKey)).toList()) {
+            DecisionSlot slot = slots.get(binding.slotKey());
+            if (slot == null) {
+                throw failure(RulePlanIssueCode.PLAN_REFERENCE_MISSING,
+                        "Binding references unknown slot: " + binding.slotKey(), binding.bindingKey());
+            }
+            validateComposition(binding, slot);
+            if (binding.compositionPolicy() != CompositionPolicy.PARAMETERIZE) {
+                if (binding.parameterization() != null) {
+                    throw failure(RulePlanIssueCode.PLAN_PARAMETERIZATION_INVALID,
+                            "Only PARAMETERIZE bindings may declare parameter values", binding.bindingKey());
+                }
+                derived.put(binding.bindingKey(), binding);
+                continue;
+            }
+            RuleParameterization values = binding.parameterization();
+            RuleParameterTemplate template = slot.parameterTemplate();
+            if (values == null || template == null
+                    || !template.templateKey().equals(values.templateKey())
+                    || !template.templateVersion().equals(values.templateVersion())
+                    || binding.executor() != null || binding.falseDecision() != null
+                    || binding.falseReasonCode() != null || !binding.requiredFactPaths().isEmpty()) {
+                throw failure(RulePlanIssueCode.PLAN_PARAMETERIZATION_INVALID,
+                        "PARAMETERIZE requires the exact product template and values without execution metadata",
+                        binding.bindingKey());
+            }
+            try {
+                var resolved = RuleParameterResolver.resolve(template, values.values());
+                derived.put(binding.bindingKey(), new DecisionBinding(
+                        binding.bindingKey(), binding.slotKey(), binding.source(), binding.compositionPolicy(),
+                        resolved.executor(), binding.dependsOn(), binding.order(), binding.enabled(),
+                        template.falseDecision(), template.falseReasonCode(), template.requiredFactPaths(), values));
+            } catch (RulePlanException exception) {
+                throw failure(exception.getCode(), exception.getMessage(), binding.bindingKey());
+            }
+        }
+        return Map.copyOf(derived);
     }
 
     private void validateCompatibility(RuleSetDefinition definition) {
@@ -450,31 +512,20 @@ public final class PraxisRulePlanCompiler {
     }
 
     private String digest(RuleSetDefinition definition, List<DecisionBinding> ordered) {
-        StringBuilder canonical = new StringBuilder();
-        canonical.append(definition.ref()).append('|')
-                .append(definition.availableRoots()).append('|')
-                .append(definition.compatibility()).append('|')
-                .append(definition.failPolicy()).append('|');
-        new TreeMap<>(definition.slots().stream().collect(java.util.stream.Collectors.toMap(
-                DecisionSlot::slotKey,
-                slot -> slot))).values().forEach(slot -> canonical.append(slot).append('|'));
-        for (DecisionBinding binding : ordered) {
-            canonical.append(binding.bindingKey()).append('|')
-                    .append(binding.slotKey()).append('|')
-                    .append(binding.source()).append('|')
-                    .append(binding.compositionPolicy()).append('|')
-                    .append(binding.executor().type()).append('|')
-                    .append(binding.executor().implementationKey()).append('|')
-                    .append(binding.executor().implementationVersion()).append('|')
-                    .append(implementationTrustMaterial(binding)).append('|')
-                    .append(PraxisCanonicalJson.canonicalize(binding.executor().expression())).append('|')
-                    .append(binding.dependsOn()).append('|')
-                    .append(binding.order()).append('|')
-                    .append(binding.falseDecision()).append('|')
-                    .append(binding.falseReasonCode()).append('|')
-                    .append(binding.requiredFactPaths()).append(';');
-        }
-        return PraxisCanonicalJson.sha256Utf8(canonical.toString());
+        Map<String, DecisionBinding> source = definition.bindings().stream()
+                .collect(java.util.stream.Collectors.toMap(DecisionBinding::bindingKey, binding -> binding));
+        var canonical = JSON.createObjectNode();
+        canonical.set("ref", JSON.valueToTree(definition.ref()));
+        canonical.set("availableRoots", JSON.valueToTree(definition.availableRoots()));
+        canonical.set("compatibility", JSON.valueToTree(definition.compatibility()));
+        canonical.put("failPolicy", definition.failPolicy().name());
+        canonical.set("slots", JSON.valueToTree(definition.slots().stream()
+                .sorted(Comparator.comparing(DecisionSlot::slotKey)).toList()));
+        canonical.set("sourceBindings", JSON.valueToTree(ordered.stream()
+                .map(binding -> source.get(binding.bindingKey())).toList()));
+        canonical.set("compiledBindings", JSON.valueToTree(ordered));
+        canonical.set("implementations", JSON.valueToTree(implementationRefs(ordered)));
+        return PraxisCanonicalJson.sha256(canonical);
     }
 
     private List<RuleImplementationRef> implementationRefs(List<DecisionBinding> ordered) {
@@ -509,22 +560,6 @@ public final class PraxisRulePlanCompiler {
                     "RuleSet cannot produce a bounded public result envelope",
                     null);
         }
-    }
-
-    private String implementationTrustMaterial(DecisionBinding binding) {
-        if (binding.executor().type() != RuleExecutorType.JAVA) {
-            return "DECLARATIVE";
-        }
-        var implementation = executorRegistry.implementationRef(binding.executor().implementationKey());
-        if (implementation.extensionTrust() == null) {
-            return implementation.implementationKey() + "@" + implementation.implementationVersion() + "|BUILT_IN";
-        }
-        var trust = implementation.extensionTrust();
-        return implementation.implementationKey() + "@" + implementation.implementationVersion()
-                + "|" + trust.artifactSha256()
-                + "|" + trust.signatureIdentity()
-                + "|" + trust.trustPolicyKey()
-                + "|" + trust.verificationEvidenceSha256();
     }
 
     private RulePlanException failure(RulePlanIssueCode code, String message, String bindingKey) {
