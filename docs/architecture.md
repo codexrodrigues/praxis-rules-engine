@@ -106,5 +106,6 @@ outputs ALLOW de dependências diretas elegíveis entram em mapa isolado do
 contexto Java, sem alterar facts ou JSON Logic. A política PRODUCT/JAVA em
 DOMAIN/POST é derivada do plano e compartilhada com admissão/runtime. O engine
 mede JSON canônico UTF-8 antes da cópia, com limite por contexto e cumulativo;
-falha de transporte não retorna resultados parciais. Esta revisão da fonte
-ainda requer release oficial e adoção nos consumidores.
+falha de transporte não retorna resultados parciais. A adoção requer coordenada
+oficial verificada em [release readiness](release-readiness.md) e provas nos
+consumidores; a publicação isolada do engine não conclui essa integração.

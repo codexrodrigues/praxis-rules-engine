@@ -1,6 +1,7 @@
 # P2F-ADR-14 — outputs de dependências diretas
 
-- Estado: `IMPLEMENTED_IN_SOURCE_ENGINE_1_5`; release e adoção downstream pendentes
+- Estado: `PUBLISHED_ENGINE_1_5_BETA_16`; smoke neutro Central-only aprovado; adoção Config/hosts pendente
+- Publicação: 2026-10-21; evidências em [release readiness](release-readiness.md)
 - Data: 2026-10-20
 - Classificação: `arquitetural`, `contrato-publico` e `transversal`
 
@@ -70,7 +71,7 @@ numéricas escapando do contador.
 
 ## Compatibilidade e adoção
 
-A fonte implementa `engineContractVersion = 1.5`, ainda não publicado. O POM
+A beta.16 publica `engineContractVersion = 1.5`. O POM
 continua com sua versão de desenvolvimento. Dialeto 1.0 e corpus não mudam.
 RuleSets 1.4 são incompatíveis e não são reescritos. O evaluator também confere
 a tupla engine/dialeto/corpus antes de qualquer executor: plano incompatível

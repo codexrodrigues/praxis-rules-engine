@@ -92,13 +92,49 @@ versiona a política de finais de linha e adiciona `clean verify` no Windows CI.
 Ela deve seguir na mesma linha compatível como próxima `0.1.0-beta.*`, somente
 após gates Linux/Windows e smoke downstream Central-only.
 
-## Fonte 1.5 — encadeamento direto, ainda não publicado
+## Contrato 1.5 — desenho e condição de adoção
 
 O [ADR-14](p2f-adr-14-direct-dependency-outputs.md) evolui a fonte para contrato
 1.5. O plano corretivo compatível 1.4 acima permanece registro histórico; não
-é a descrição da fonte atual. A implementação e o gate local não autorizam
-recomendar uma coordenada 1.5 inexistente. Preservar os gates Linux/Windows,
-publicação oficial, hashes/corpus e consumo Central-only. Config e hosts devem
+é a descrição da fonte atual. A implementação e o gate local isolados não comprovam publicação. A evidência
+da beta.16 está abaixo, incluindo gates Linux/Windows, publicação oficial,
+hashes/corpus e consumo Central-only. Config e hosts devem
 ser alinhados pela migração governada, com novas composições/aprovações e sem
 tráfego misto de contratos incompatíveis. Não reescrever snapshots 1.4 nem
 concluir que leitura histórica implica capacidade de ativação/execução.
+
+
+## Beta.16 — publicação verificada em 2026-10-21
+
+Coordenada: `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.16`.
+Contrato engine `1.5`, dialeto JSON Logic `1.0`. O POM de desenvolvimento permanece
+`0.0.1-SNAPSHOT`; o workflow define a versão publicada. A linha beta ativa é mantida,
+mas a compatibilidade de RuleSets é exata: definições 1.4 requerem novas composições,
+aprovação e compilação governadas antes da execução em 1.5.
+
+- [PR de implementação #21](https://github.com/codexrodrigues/praxis-rules-engine/pull/21),
+  merge `ff852975004a8f04285f978b0bd910bec15e3496`.
+- [CI do PR](https://github.com/codexrodrigues/praxis-rules-engine/actions/runs/39589792442)
+  e [CI da main](https://github.com/codexrodrigues/praxis-rules-engine/actions/runs/39590141304)
+  aprovados em Linux e Windows, com 83 testes por execução.
+- [Dispatch oficial](https://github.com/codexrodrigues/praxis-rules-engine/actions/runs/39590341230)
+  criou a tag anotada `v0.1.0-beta.16` no merge acima;
+  [publicação por tag](https://github.com/codexrodrigues/praxis-rules-engine/actions/runs/39590361201)
+  concluiu build, assinatura, upload e prova de disponibilidade no Central.
+- [POM público](https://repo.maven.apache.org/maven2/io/github/codexrodrigues/praxis-rules-engine/0.1.0-beta.16/praxis-rules-engine-0.1.0-beta.16.pom),
+  JAR, sources, Javadocs e respectivas assinaturas disponíveis. Checksums SHA-1
+  publicados conferidos; SHA-256 do JAR:
+  `c214084a9aeff5f8af1346eb67e9a303e61f3a310c7e543883afce080aaf2db7`.
+- Smoke de consumidor Java neutro, com repositório Maven inicialmente vazio e
+  mirror exclusivo do Central: cadeia de dois executores via API pública,
+  facts originais/digest e recusa de plano 1.4 antes dos executores aprovados.
+  O hash anunciado e os bytes do corpus conferem com
+  `E890925C7306A2646CF86443C29ABDDEF0C0645C6228F1DE4A8740E45253D181`.
+  Os 60 arquivos Java do sources JAR são idênticos aos da tag revisada.
+- [Guidance canônico integrado](https://github.com/codexrodrigues/praxis-codex-skills/pull/807)
+  para engine e Reactive Determinations, com preflight e revisão independente.
+
+O smoke neutro não é prova financeira, HTTP, UI, transação ou autorização multitenant.
+Adoção Config/Metadata/Quickstart, migração de composições e provas do exemplo
+continuam gates próprios. A documentação no tag registra o estado pré-publicação;
+este registro posterior não reescreve a tag nem altera o artefato publicado.

@@ -83,7 +83,7 @@ O control plane pode usar `RuleBindingExecutorRegistry.planning(declarations)` p
 
 Head ETag, ativacao, rollback, cache e persistencia pertencem ao Config Starter/host. Um rollback para o mesmo conteudo precisa de nova identidade de ativacao no control plane; o hash de conteudo permanece estavel.
 
-## Composição de cálculos Java (fonte 1.5, ainda não publicada)
+## Composição de cálculos Java (contract 1.5)
 
 Declare a aresta em `dependsOn` e, na admissão do plano compilado, confira
 `plan.directDependencyOutputKeys(consumerKey)` para a aresta requerida. O host
