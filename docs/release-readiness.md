@@ -138,3 +138,33 @@ O smoke neutro não é prova financeira, HTTP, UI, transação ou autorização 
 Adoção Config/Metadata/Quickstart, migração de composições e provas do exemplo
 continuam gates próprios. A documentação no tag registra o estado pré-publicação;
 este registro posterior não reescreve a tag nem altera o artefato publicado.
+
+## Beta.17 — publicação verificada em 2026-10-21
+
+Coordenada: `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.17`.
+Contrato engine `1.6`; dialeto `1.0` e corpus permanecem inalterados. Este incremento
+implementa PARAMETERIZE escalar por template do produto; snapshots de contrato 1.5
+precisam de nova composição, aprovação e publicação governadas.
+
+- [PR #24](https://github.com/codexrodrigues/praxis-rules-engine/pull/24), merge
+  `630fe1ccbaeb449f0673fd9ef22d2db41512356f`, também alvo da tag `v0.1.0-beta.17`.
+- [CI do PR](https://github.com/codexrodrigues/praxis-rules-engine/actions/runs/39606756485):
+  Linux e Windows aprovados, 100 testes por execução.
+- [Preparação oficial](https://github.com/codexrodrigues/praxis-rules-engine/actions/runs/39606980327)
+  e [publicação por tag](https://github.com/codexrodrigues/praxis-rules-engine/actions/runs/39607002564)
+  concluídas com sucesso.
+- [POM público](https://repo.maven.apache.org/maven2/io/github/codexrodrigues/praxis-rules-engine/0.1.0-beta.17/praxis-rules-engine-0.1.0-beta.17.pom),
+  JAR, sources e Javadoc disponíveis; SHA-1, SHA-256 e SHA-512 dos quatro artefatos
+  conferidos. As quatro assinaturas foram verificadas com fingerprint público
+  `15AC2D93323900106EA6091A675D757DAC8D8031`, identificado no workflow oficial.
+- SHA-256 do JAR: `2ca78cc7fe1abcf63b36df0259ccf41491acf6056eb4fd837ea334229c61ea52`.
+  Os 67 arquivos Java do sources JAR são idênticos à tag. O JAR confirma contrato 1.6
+  e o hash dos bytes do corpus `E890925C7306A2646CF86443C29ABDDEF0C0645C6228F1DE4A8740E45253D181`.
+- [Guidance canônico #809](https://github.com/codexrodrigues/praxis-codex-skills/pull/809)
+  integrado e sincronizado seletivamente para Engine, Config e Core.
+
+A auditoria pública foi independente da implementação. O workflow não preserva um
+bundle ou manifesto de hashes do runner: esta prova não afirma igualdade binária
+com uma build local ou com a primeira build do job. Fontes, assinaturas e checksums
+públicos foram verificados; os gates de adoção dos consumidores continuam próprios.
+Este registro posterior não modifica a tag nem o artefato publicado.
