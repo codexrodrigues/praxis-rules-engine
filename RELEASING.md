@@ -43,9 +43,11 @@ contract `1.4`. Beta.14 advertised a corpus hash different from its packaged
 bytes. Beta.15 corrected that source-level drift, but a later audit reproduced
 a Windows checkout failure because the repository did not govern LF/CRLF.
 Neither beta.14 nor beta.15 is a green cross-platform baseline for new
-consumers. The current source prepares a corrective beta on the same
-`0.1.0-beta.*` line; it must not be recommended until Linux and Windows CI pass
-and downstream proof verifies the published bytes and advertised hash. See
+consumers. The earlier corrective plan retained contract 1.4 on the active
+`0.1.0-beta.*` line. The current source additionally implements contract 1.5,
+which remains unpublished and requires compatible consumer compositions and
+adoption. A subsequent release must not be recommended until Linux and Windows
+CI pass and downstream proof verifies the published bytes and advertised hash. See
 [release readiness](docs/release-readiness.md) and the
 [contract reference](docs/contracts-reference.md#compatibilidade-publicada).
 

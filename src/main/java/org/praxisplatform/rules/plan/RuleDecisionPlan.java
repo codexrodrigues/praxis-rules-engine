@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.Objects;
 import org.praxisplatform.rules.contract.DecisionBinding;
 import org.praxisplatform.rules.contract.DecisionSlot;
+import org.praxisplatform.rules.contract.DecisionSource;
+import org.praxisplatform.rules.contract.DecisionStage;
+import org.praxisplatform.rules.contract.RuleExecutorType;
 import org.praxisplatform.rules.contract.RuleImplementationRef;
 import org.praxisplatform.rules.contract.RuleSetDefinition;
 
@@ -36,6 +39,43 @@ public record RuleDecisionPlan(
         if (planDigest == null || planDigest.isBlank()) {
             throw new IllegalArgumentException("planDigest must not be blank");
         }
+    }
+
+    /**
+     * Classifies the existing DAG edges using the fixed engine trust policy.
+     *
+     * <p>Both endpoints must be enabled PRODUCT Java bindings in DOMAIN_DECISION or
+     * POST_DECISION. Other valid edges remain control-only. This derived query is shared by
+     * runtime transport and host admission; it neither creates a second graph nor proves an
+     * output exists or that its host-owned shape is compatible.</p>
+     *
+     * @param consumerBindingKey binding receiving the context
+     * @return eligible direct producer keys in deterministic binding-key order, or empty for
+     *         an unknown or ineligible consumer
+     */
+    public List<String> directDependencyOutputKeys(String consumerBindingKey) {
+        DecisionBinding consumer = orderedBindings.stream()
+                .filter(binding -> binding.bindingKey().equals(consumerBindingKey))
+                .findFirst().orElse(null);
+        if (!outputParticipant(consumer)) {
+            return List.of();
+        }
+        return orderedBindings.stream()
+                .filter(producer -> consumer.dependsOn().contains(producer.bindingKey()))
+                .filter(this::outputParticipant)
+                .map(DecisionBinding::bindingKey)
+                .sorted()
+                .toList();
+    }
+
+    private boolean outputParticipant(DecisionBinding binding) {
+        if (binding == null || !binding.enabled() || binding.source() != DecisionSource.PRODUCT
+                || binding.executor().type() != RuleExecutorType.JAVA) {
+            return false;
+        }
+        DecisionSlot slot = slotsByKey.get(binding.slotKey());
+        return slot != null && (slot.stage() == DecisionStage.DOMAIN_DECISION
+                || slot.stage() == DecisionStage.POST_DECISION);
     }
 
     /**

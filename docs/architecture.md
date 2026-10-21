@@ -98,3 +98,13 @@ O pacote [ADRs da plataforma de regras](p2f-rule-platform-adrs.md) separa
 contrato de execucao, control plane e responsabilidades do host. A
 implementacao de planner/composicao preserva todos os invariantes acima e
 continua sem Spring, I/O, persistencia, tenant store, cache ou effects.
+
+## Outputs diretos no contexto Java (fonte contract 1.5)
+
+O [ADR-14](p2f-adr-14-direct-dependency-outputs.md) completa o DAG existente:
+outputs ALLOW de dependências diretas elegíveis entram em mapa isolado do
+contexto Java, sem alterar facts ou JSON Logic. A política PRODUCT/JAVA em
+DOMAIN/POST é derivada do plano e compartilhada com admissão/runtime. O engine
+mede JSON canônico UTF-8 antes da cópia, com limite por contexto e cumulativo;
+falha de transporte não retorna resultados parciais. Esta revisão da fonte
+ainda requer release oficial e adoção nos consumidores.

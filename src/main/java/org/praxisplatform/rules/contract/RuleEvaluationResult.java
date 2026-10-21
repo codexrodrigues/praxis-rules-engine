@@ -11,7 +11,7 @@ import java.util.Objects;
  * @param planDigest digest of the compiled plan
  * @param bindingResults ordered binding outcomes
  * @param reasonCodes consolidated stable reasons
- * @param factsDigest canonical SHA-256 of the valid facts snapshot, or {@code null} for invalid input
+ * @param factsDigest canonical SHA-256 of the valid facts snapshot, or {@code null} when rejected before hashing
  * @param compatibility exact engine and dialect baseline used
  * @param implementationRefs exact trusted Java implementations used by the plan
  * @param failPolicy host-enforced failure policy

@@ -43,7 +43,22 @@
 | `0.1.0-beta.12` | `1.2` | `1.0` | Linha anterior com propostas de transformação tipadas. |
 | `0.1.0-beta.13` | `1.3` | `1.0` | Marco público anterior de `RuleExtensionTrust`, com prova downstream Central-only. |
 | `0.1.0-beta.14` | `1.4` | `1.0` | Publicada, mas não recomendada: hash anunciado diverge do corpus empacotado. |
-| `0.1.0-beta.15` candidata | `1.4` | `1.0` | Correção de corpus/hash e convergência lazy de `var`; release e downstream pendentes. |
-| checkout atual | `1.4` | `1.0` | Fonte corretiva; não constitui prova de coordenada publicada. |
+| `0.1.0-beta.15` | `1.4` | `1.0` | Publicada segundo o registro de release readiness; corrige corpus/hash e `var`, mas falha de LF/CRLF no Windows impede baseline verde. |
+| checkout atual | `1.5` | `1.0` | Outputs diretos Java; fonte ainda não publicada nem adotada downstream. |
 
 O SHA-256 do corpus e parte de `RuleRuntimeCompatibility`; consumidores nao devem aceitar RuleSets com coordenadas divergentes. O contrato efetivo de um consumidor deve ser provado contra a coordenada Maven publicada, nao inferido de uma fonte candidata em `main`.
+
+## Contexto Java e outputs diretos (fonte 1.5)
+
+`RuleExecutorContext` inclui `directDependencyOutputs`, mapa imutável por
+bindingKey com cópias defensivas de JSON nativo finito. Só arestas diretas
+PRODUCT/JAVA em DOMAIN/POST entre ambos os endpoints fornecem outputs ALLOW.
+Ausência Java omite a chave; JSON null preserva a chave. Facts e JSON Logic
+não recebem esses valores. `RuleDecisionPlan.directDependencyOutputKeys`
+compartilha a classificação derivada com evaluator e admissão no host.
+
+O [ADR-14](p2f-adr-14-direct-dependency-outputs.md) define trust, cinco estados,
+compatibilidade, budgets e erros sem resultados parciais. Consumidores devem
+adotar uma release oficial 1.5 e composições aprovadas compatíveis; esta fonte
+não é prova de disponibilidade Maven. O construtor do contexto mudou nesta
+linha beta limpa, sem overload de compatibilidade que esconda o novo canal.

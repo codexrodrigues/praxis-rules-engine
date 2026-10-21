@@ -212,8 +212,8 @@ class TypedTransformationContractTest {
     }
 
     @Test
-    void publishesTheDeterministicBoundaryContractAsEngineBaselineOnePointFour() {
-        assertEquals("1.4", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
+    void publishesTheCurrentRuleSetContractAsEngineBaselineOnePointFive() {
+        assertEquals("1.5", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
     }
 
     @Test

@@ -82,3 +82,32 @@ CompiledRuleSnapshot prepared = new PraxisRuleSnapshotCompiler(registry)
 O control plane pode usar `RuleBindingExecutorRegistry.planning(declarations)` para provar coordenadas permitidas sem instanciar codigo do host. Esse registry nao executa bindings Java; somente o host fornece o registry executavel.
 
 Head ETag, ativacao, rollback, cache e persistencia pertencem ao Config Starter/host. Um rollback para o mesmo conteudo precisa de nova identidade de ativacao no control plane; o hash de conteudo permanece estavel.
+
+## Composição de cálculos Java (fonte 1.5, ainda não publicada)
+
+Declare a aresta em `dependsOn` e, na admissão do plano compilado, confira
+`plan.directDependencyOutputKeys(consumerKey)` para a aresta requerida. O host
+valida o shape tipado de `context.directDependencyOutputs().get(producerKey)`;
+chave ausente, null inesperado ou unidade/escala inválida são falhas técnicas
+do contrato do host. Não pré-preencha resultado intermediário em facts nem
+execute novamente fora do DAG. Não use `requiredFactPaths` para pseudo-paths
+de outputs. O [ADR-14](p2f-adr-14-direct-dependency-outputs.md) define a política
+fixa de fontes/stages, isolamento e budgets. A consulta não concede acesso a
+outputs de segurança, cliente ou intents, mesmo com assinatura attestada.
+
+Adote somente coordenada Maven publicada e replique aprovação/compilação de
+composições compatíveis 1.5 no control plane e host. Engine 1.5 rejeita 1.4;
+leitura histórica e coreografia de cutover pertencem ao control plane/host.
+
+Em hosts corporativos, cacheie apenas planos compilados com a tupla atual de
+engine/dialeto/corpus e registry compatível. Restauração de um record público
+não equivale a admissão; o evaluator recusa coordenadas incompatíveis, mas não
+substitui a verificação de conteúdo, tenant/ambiente, autorização e aprovação.
+A captura única de facts protege a avaliação contra alterações posteriores no
+draft do chamador; forneça a árvore estável enquanto a captura acontece.
+
+O canal interno restrito não autoriza exposição de salários: o host projeta
+somente campos autorizados e nunca serializa `RuleEvaluationResult` bruto como
+resposta genérica ao navegador. Diagnóstico técnico não é negativa de negócio.
+A versão publicada, a autoridade ativa e a identidade da folha devem continuar
+verificáveis pelo fluxo canônico antes de qualquer persistência.

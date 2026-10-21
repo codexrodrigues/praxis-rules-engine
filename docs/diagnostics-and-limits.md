@@ -22,3 +22,26 @@ Os limites podem ser reduzidos por chamada por meio de `JsonLogicEvaluationOptio
 - `RULE_PATH_INVALID` e `RULE_REGEX_INVALID` sao erros estruturados, inclusive para indices ou bounds excessivos; nao exponha excecoes do JDK.
 - `INCONCLUSIVE` pode coexistir com ramos independentes; uma negativa real nao deve ser escondida por um ramo inconclusivo.
 - Limites e erros de adaptacao/projecao sao evidencia tecnica, nunca uma decisao de negocio.
+
+## Transporte direto Java (fonte contract 1.5)
+
+`DEPENDENCY_OUTPUT_LIMIT_EXCEEDED` significa que o mapa JSON canônico de um
+contexto, ou a soma por avaliação, excedeu 256.000 bytes UTF-8. Mapa vazio custa
+zero; fan-out cobra cada entrega. A medição limitada precede a cópia e a chamada
+do consumidor, após os gates. `DEPENDENCY_OUTPUT_INVALID` identifica nó não JSON
+nativo ou número não finito no canal; não converte valores. Ambos devolvem
+`TECHNICAL_ERROR` com `bindingResults` e propostas vazios. Os limites existentes
+de outputs e resultado público permanecem independentes. Ver [ADR-14](p2f-adr-14-direct-dependency-outputs.md).
+
+A forma JSON do mapa é validada antes de medir bytes; `DEPENDENCY_OUTPUT_INVALID`
+tem precedência sobre excesso de orçamento mesmo se ambos ocorrerem. Reordenar
+campos de um objeto não pode mudar o diagnóstico. `PLAN_COMPATIBILITY_INVALID`
+na avaliação indica plano de cache com engine/dialeto/corpus incompatíveis;
+nenhum executor é chamado e o resultado identifica o runtime atual. Recompile
+a composição pelo fluxo governado; não altere a versão do plano em memória.
+
+No RuleSet engine, `FACTS_INVALID` também cobre nós Jackson não nativos ou não
+finitos. `FACTS_LIMIT_EXCEEDED` cobre o orçamento canônico antes do hash, além
+dos limites estruturais existentes. O tamanho compacto de um expoente decimal
+não elimina esse limite. Ambos encerram sem digest/execução; não são negações
+de negócio. O orçamento de facts não consome o orçamento de outputs.

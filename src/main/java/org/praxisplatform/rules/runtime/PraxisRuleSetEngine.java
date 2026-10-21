@@ -18,6 +18,7 @@ import org.praxisplatform.rules.contract.RuleBindingResult;
 import org.praxisplatform.rules.contract.RuleDecision;
 import org.praxisplatform.rules.contract.RuleEvaluationResult;
 import org.praxisplatform.rules.contract.RuleEngineLimits;
+import org.praxisplatform.rules.contract.RuleRuntimeCompatibility;
 import org.praxisplatform.rules.contract.RuleImplementationRef;
 import org.praxisplatform.rules.contract.RuleExecutorResult;
 import org.praxisplatform.rules.contract.RuleExecutorType;
@@ -60,8 +61,13 @@ public final class PraxisRuleSetEngine {
     /**
      * Evaluates one frozen plan against host-resolved facts.
      *
+     * <p>Plans must be compiled with the current runtime and trusted registry. A restored plan
+     * with incompatible engine, dialect, or corpus coordinates is rejected before execution.
+     * The caller must not mutate facts while the initial snapshot is being captured; subsequent
+     * mutations of the caller's tree cannot change this evaluation.</p>
+     *
      * @param plan validated immutable plan
-     * @param facts complete facts snapshot for this evaluation
+     * @param facts complete native JSON facts snapshot with finite numbers for this evaluation
      * @param nowUtc frozen UTC instant
      * @param userTimeZone explicit time zone
      * @return deterministic consolidated result
@@ -72,6 +78,10 @@ public final class PraxisRuleSetEngine {
             String nowUtc,
             String userTimeZone) {
         Objects.requireNonNull(plan, "plan is required");
+        if (!RuleRuntimeCompatibility.current().equals(plan.definition().compatibility())) {
+            return result(plan, RuleDecision.TECHNICAL_ERROR, List.of(),
+                    List.of("PLAN_COMPATIBILITY_INVALID"), null);
+        }
         if (facts == null || !facts.isObject()) {
             return result(
                     plan,
@@ -81,14 +91,35 @@ public final class PraxisRuleSetEngine {
                     null);
         }
         try {
+            // Admit native, bounded JSON before Jackson can invoke a POJO serializer or expand
+            // a compact numeric representation. This guard also bounds the initial copy.
+            RuleJsonBudget.validateFacts(facts);
             jsonLogicEngine.validateResultValue(facts, JsonLogicLimits.DEFAULT);
-        } catch (PraxisJsonLogicException exception) {
+        } catch (RuleJsonBudget.InvalidValue exception) {
+            return result(plan, RuleDecision.TECHNICAL_ERROR, List.of(),
+                    List.of("FACTS_INVALID"), null);
+        } catch (RuleJsonBudget.LimitExceeded | PraxisJsonLogicException exception) {
             return result(
                     plan,
                     RuleDecision.TECHNICAL_ERROR,
                     List.of(),
                     List.of("FACTS_LIMIT_EXCEEDED"),
                     null);
+        }
+        // Capture once for the digest, every Java context and JSON Logic. Per-executor copies
+        // alone would allow a caller-owned draft to change between bindings.
+        facts = facts.deepCopy();
+        try {
+            // Validate the captured tree, not a caller-owned alias. The first structural check
+            // above bounds capture; this second check validates exactly what the digest uses.
+            RuleJsonBudget.validateFacts(facts);
+            jsonLogicEngine.validateResultValue(facts, JsonLogicLimits.DEFAULT);
+        } catch (RuleJsonBudget.InvalidValue exception) {
+            return result(plan, RuleDecision.TECHNICAL_ERROR, List.of(),
+                    List.of("FACTS_INVALID"), null);
+        } catch (RuleJsonBudget.LimitExceeded | PraxisJsonLogicException exception) {
+            return result(plan, RuleDecision.TECHNICAL_ERROR, List.of(),
+                    List.of("FACTS_LIMIT_EXCEEDED"), null);
         }
         String factsDigest = PraxisCanonicalJson.sha256(facts);
         if (!validTemporalContext(nowUtc, userTimeZone)) {
@@ -104,6 +135,9 @@ public final class PraxisRuleSetEngine {
         Map<String, RuleBindingResult> resultsByBinding = new LinkedHashMap<>();
         java.util.Set<String> transformationKeys = new java.util.HashSet<>();
         java.util.Set<String> transformationTargets = new java.util.HashSet<>();
+        // Private validated snapshots avoid copying result accessors before transport budgeting.
+        Map<String, JsonNode> retainedOutputs = new LinkedHashMap<>();
+        RuleJsonBudget dependencyOutputBudget = new RuleJsonBudget();
         boolean anyInconclusive = false;
         int aggregatedBytes = 0;
         int aggregatedReasonCodes = 0;
@@ -116,13 +150,17 @@ public final class PraxisRuleSetEngine {
                 bindingResult = dependencyResult(slot, binding, resultsByBinding);
             }
             if (bindingResult == null) {
-                bindingResult = evaluateBinding(
-                        plan,
-                        slot,
-                        binding,
-                        facts,
-                        nowUtc,
-                        userTimeZone);
+                try {
+                    bindingResult = evaluateBinding(
+                            plan, slot, binding, facts, nowUtc, userTimeZone,
+                            retainedOutputs, dependencyOutputBudget);
+                } catch (RuleJsonBudget.InvalidValue exception) {
+                    return result(plan, RuleDecision.TECHNICAL_ERROR, List.of(),
+                            List.of("DEPENDENCY_OUTPUT_INVALID"), factsDigest);
+                } catch (RuleJsonBudget.LimitExceeded exception) {
+                    return result(plan, RuleDecision.TECHNICAL_ERROR, List.of(),
+                            List.of("DEPENDENCY_OUTPUT_LIMIT_EXCEEDED"), factsDigest);
+                }
             }
             boolean transformationConflict = bindingResult.transformations().stream().anyMatch(proposal ->
                     !transformationKeys.add(proposal.proposalKey())
@@ -260,7 +298,9 @@ public final class PraxisRuleSetEngine {
             DecisionBinding binding,
             JsonNode facts,
             String nowUtc,
-            String userTimeZone) {
+            String userTimeZone,
+            Map<String, JsonNode> retainedOutputs,
+            RuleJsonBudget dependencyOutputBudget) {
         for (String requiredPath : binding.requiredFactPaths()) {
             if (!pathExists(facts, requiredPath)) {
                 return bindingResult(
@@ -322,11 +362,21 @@ public final class PraxisRuleSetEngine {
                     List.of("IMPLEMENTATION_UNAVAILABLE"),
                     null);
         }
+        Map<String, JsonNode> dependencyOutputs = new LinkedHashMap<>();
+        for (String key : plan.directDependencyOutputKeys(binding.bindingKey())) {
+            JsonNode output = retainedOutputs.get(key);
+            if (output != null) {
+                dependencyOutputs.put(key, output);
+            }
+        }
+        // Reserve once, only after facts/decision/trust gates and before context deep copies.
+        dependencyOutputBudget.reserve(dependencyOutputs);
         try {
             RuleExecutorResult executorResult = executor.evaluate(new RuleExecutorContext(
                     plan.definition().ref(),
                     binding,
                     facts,
+                    dependencyOutputs,
                     nowUtc,
                     userTimeZone));
             if (executorResult == null) {
@@ -402,8 +452,9 @@ public final class PraxisRuleSetEngine {
                         List.of("TRANSFORMATION_PROPOSAL_REQUIRED"),
                         null);
             }
+            JsonNode output = executorResult.output();
             try {
-                jsonLogicEngine.validateResultValue(executorResult.output(), JsonLogicLimits.DEFAULT);
+                jsonLogicEngine.validateResultValue(output, JsonLogicLimits.DEFAULT);
             } catch (PraxisJsonLogicException exception) {
                 return bindingResult(
                         slot,
@@ -424,13 +475,13 @@ public final class PraxisRuleSetEngine {
                         List.of("TRANSFORMATION_PROPOSAL_INVALID"),
                         null);
             }
-            return bindingResult(
-                    slot,
-                    binding,
-                    executorResult.decision(),
-                    executorResult.reasonCodes(),
-                    executorResult.output(),
+            RuleBindingResult evaluated = bindingResult(
+                    slot, binding, executorResult.decision(), executorResult.reasonCodes(), output,
                     transformations);
+            if (executorResult.decision() == RuleDecision.ALLOW && output != null) {
+                retainedOutputs.put(binding.bindingKey(), output);
+            }
+            return evaluated;
         } catch (RuntimeException exception) {
             return bindingResult(
                     slot,
@@ -543,7 +594,7 @@ public final class PraxisRuleSetEngine {
                 bindingResults,
                 normalizedReasonCodes(reasonCodes),
                 factsDigest,
-                plan.definition().compatibility(),
+                RuleRuntimeCompatibility.current(),
                 implementationRefs(plan),
                 plan.definition().failPolicy(),
                 decision == RuleDecision.ALLOW
@@ -562,7 +613,7 @@ public final class PraxisRuleSetEngine {
                     List.of(),
                     List.of("EVALUATION_RESULT_LIMIT_EXCEEDED"),
                     factsDigest,
-                    plan.definition().compatibility(),
+                    RuleRuntimeCompatibility.current(),
                     implementationRefs(plan),
                     plan.definition().failPolicy(),
                     List.of());
