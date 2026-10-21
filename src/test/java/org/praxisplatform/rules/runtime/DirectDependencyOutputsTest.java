@@ -191,7 +191,7 @@ class DirectDependencyOutputsTest {
         var registry = registry(executor("a", context -> allow(JSON.createObjectNode().put("value", 42))));
         var json = new DecisionBinding("b", "b", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.jsonLogic(JSON.readTree("{\"===\":[{\"var\":[\"request.a\",\"absent\"]},\"absent\"]}")),
-                List.of("a"), 1, true, RuleDecision.DENY, "LEAK", List.of());
+                List.of("a"), 1, true, RuleDecision.DENY, "LEAK", List.of(), null);
         var plan = compile(registry, List.of(binding("a", List.of()), json));
         assertEquals(List.of(), plan.directDependencyOutputKeys("b"));
         assertEquals(RuleDecision.ALLOW, evaluate(registry, plan, JSON.createObjectNode()).decision());
@@ -207,7 +207,7 @@ class DirectDependencyOutputsTest {
                 registry(executor("a", context -> RuleExecutorResult.allow()))).compile(historical));
         assertEquals(RulePlanIssueCode.PLAN_COMPATIBILITY_INVALID, exception.getCode());
         assertEquals("1.4", historical.compatibility().engineContractVersion());
-        assertEquals("1.5", RuleRuntimeCompatibility.current().engineContractVersion());
+        assertEquals("1.6", RuleRuntimeCompatibility.current().engineContractVersion());
     }
 
     @Test
@@ -252,13 +252,13 @@ class DirectDependencyOutputsTest {
         for (int index = 0; index < 128; index++) {
             String key = "consumer." + index;
             bindings.add(new DecisionBinding(key, key, DecisionSource.PRODUCT, null,
-                    RuleExecutorRef.java("test:consumer", "1"), List.of("a"), 0, true, null, null, List.of()));
+                    RuleExecutorRef.java("test:consumer", "1"), List.of("a"), 0, true, null, null, List.of(), null));
         }
         var result = evaluate(registry, compile(registry, bindings), JSON.createObjectNode());
         assertTransportLimit(result);
         assertEquals(127, calls.get()); // 127 * 2008 fits; the 128th delivery would exceed 256000.
         bindings.add(new DecisionBinding("consumer.extra", "consumer.extra", DecisionSource.PRODUCT, null,
-                RuleExecutorRef.java("test:consumer", "1"), List.of("a"), 0, true, null, null, List.of()));
+                RuleExecutorRef.java("test:consumer", "1"), List.of("a"), 0, true, null, null, List.of(), null));
         assertEquals(RulePlanIssueCode.PLAN_LIMIT_EXCEEDED,
                 assertThrows(RulePlanException.class, () -> compile(registry, bindings)).getCode());
     }
@@ -270,7 +270,7 @@ class DirectDependencyOutputsTest {
                 executor("b", context -> fail("missing facts must gate invocation")),
                 executor("c", context -> { consumers.incrementAndGet(); return RuleExecutorResult.allow(); }));
         DecisionBinding missing = new DecisionBinding("b", "b", DecisionSource.PRODUCT, null,
-                RuleExecutorRef.java("test:b", "1"), List.of("a"), 0, true, null, null, List.of("request.required"));
+                RuleExecutorRef.java("test:b", "1"), List.of("a"), 0, true, null, null, List.of("request.required"), null);
         var result = evaluate(registry, compile(registry, List.of(binding("a", List.of()), missing, binding("c", List.of("a")))), JSON.createObjectNode());
         assertEquals(RuleDecision.INCONCLUSIVE, result.decision());
         assertEquals(1, consumers.get());
@@ -314,7 +314,7 @@ class DirectDependencyOutputsTest {
                         binding("b", List.of("a")), JSON.createObjectNode(), Map.of("a", output), NOW, "UTC"));
                 // SECURITY Java is still a legal control dependency and supplies no output.
                 var control = new DecisionBinding("a", "a", DecisionSource.SECURITY, null,
-                        RuleExecutorRef.java("test:a", "1"), List.of(), 0, true, null, null, List.of());
+                        RuleExecutorRef.java("test:a", "1"), List.of(), 0, true, null, null, List.of(), null);
                 var controlResult = evaluate(registry, compile(registry, List.of(control, binding("b", List.of("a")))), JSON.createObjectNode());
                 assertEquals(RuleDecision.ALLOW, controlResult.decision());
                 assertEquals(1, calls.get());
@@ -406,7 +406,7 @@ class DirectDependencyOutputsTest {
                 }), executor("b", context -> allow(context.facts().get("request"))));
         var check = new DecisionBinding("z", "z", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.jsonLogic(JSON.readTree("{\"===\":[{\"var\":\"request\"},7]}")),
-                List.of("b"), 0, true, RuleDecision.DENY, "FACTS_CHANGED", List.of());
+                List.of("b"), 0, true, RuleDecision.DENY, "FACTS_CHANGED", List.of(), null);
         var result = evaluate(registry, compile(registry, List.of(binding("a", List.of()),
                 binding("b", List.of("a")), check)), callerFacts);
         assertEquals(RuleDecision.ALLOW, result.decision());
@@ -555,13 +555,13 @@ class DirectDependencyOutputsTest {
 
     private static DecisionBinding binding(String key, List<String> dependencies, DecisionSource source) {
         return new DecisionBinding(key, key, source, source == DecisionSource.CUSTOMER ? CompositionPolicy.REPLACE_EXACT : null,
-                RuleExecutorRef.java("test:" + key, "1"), dependencies, 0, true, null, null, List.of());
+                RuleExecutorRef.java("test:" + key, "1"), dependencies, 0, true, null, null, List.of(), null);
     }
 
     private static DecisionSlot slot(String key, DecisionStage stage, DecisionSource source) {
         return new DecisionSlot(key, stage, SlotCardinality.SINGLE,
                 source == DecisionSource.CUSTOMER ? OverridePolicy.REPLACEABLE : OverridePolicy.FORBIDDEN,
-                DecisionAggregationPolicy.SINGLE_RESULT);
+                DecisionAggregationPolicy.SINGLE_RESULT, null);
     }
 
     private static RuleSetDefinition definition(List<DecisionSlot> slots, List<DecisionBinding> bindings) {

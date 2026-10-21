@@ -124,11 +124,11 @@ class PraxisRuleSnapshotCompilerTest {
                 new RuleImplementationRef("benefits:amount", "1.0.0")));
         DecisionSlot calculationSlot = new DecisionSlot(
                 "calculation", DecisionStage.DOMAIN_DECISION, SlotCardinality.SINGLE,
-                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT);
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null);
         DecisionBinding calculation = new DecisionBinding(
                 "calculation", "calculation", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.java("benefits:amount", "1.0.0"), List.of(), 10, true,
-                null, null, List.of());
+                null, null, List.of(), null);
         PublishedRuleSnapshot base = snapshot(false, "snapshot-java", null, 1);
         PublishedRuleSnapshot javaSnapshot = new PublishedRuleSnapshot(
                 base.snapshotContractVersion(), base.snapshotKey(), base.tenantId(), base.environment(),
@@ -179,18 +179,18 @@ class PraxisRuleSnapshotCompilerTest {
     private RuleSetDefinition definition(boolean reverse) throws Exception {
         DecisionSlot authorizationSlot = new DecisionSlot(
                 "authorization", DecisionStage.PROTECTED_GUARD, SlotCardinality.SINGLE,
-                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT);
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null);
         DecisionSlot eligibilitySlot = new DecisionSlot(
                 "eligibility", DecisionStage.DOMAIN_DECISION, SlotCardinality.SINGLE,
-                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT);
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null);
         DecisionBinding authorization = new DecisionBinding(
                 "authorization", "authorization", DecisionSource.SECURITY, null,
                 RuleExecutorRef.jsonLogic(JSON.readTree("{\"===\":[true,true]}")), List.of(), 10, true,
-                RuleDecision.DENY, "NOT_AUTHORIZED", List.of());
+                RuleDecision.DENY, "NOT_AUTHORIZED", List.of(), null);
         DecisionBinding eligibility = new DecisionBinding(
                 "eligibility", "eligibility", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.jsonLogic(JSON.readTree("{\"===\":[true,true]}")), List.of("authorization"), 20, true,
-                RuleDecision.DENY, "NOT_ELIGIBLE", List.of());
+                RuleDecision.DENY, "NOT_ELIGIBLE", List.of(), null);
         return new RuleSetDefinition(
                 new RuleSetRef("benefits", "grants", "extraordinary-grant", "evaluate", 1),
                 List.of("request"),

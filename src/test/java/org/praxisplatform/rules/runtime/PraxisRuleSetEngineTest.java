@@ -158,7 +158,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "CUSTOMER_FALSE",
-                List.of());
+                List.of(), null);
         RulePlanException override = assertThrows(
                 RulePlanException.class,
                 () -> new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
@@ -176,7 +176,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 null,
                 null,
-                List.of());
+                List.of(), null);
         RulePlanException implementation = assertThrows(
                 RulePlanException.class,
                 () -> new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
@@ -188,7 +188,7 @@ class PraxisRuleSetEngineTest {
                 DecisionStage.DOMAIN_DECISION,
                 SlotCardinality.MULTIPLE,
                 OverridePolicy.RESTRICT_ONLY,
-                DecisionAggregationPolicy.DENY_OVERRIDES);
+                DecisionAggregationPolicy.DENY_OVERRIDES, null);
         DecisionBinding augmentation = new DecisionBinding(
                 "customer.augmentation",
                 "extensible",
@@ -200,7 +200,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "CUSTOMER_FALSE",
-                List.of());
+                List.of(), null);
         new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
                 .compile(simpleDefinition(List.of(extensible), List.of(augmentation)));
     }
@@ -237,7 +237,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 null,
                 null,
-                List.of());
+                List.of(), null);
         RulePlanException executor = assertThrows(
                 RulePlanException.class,
                 () -> new PraxisRulePlanCompiler(registry)
@@ -256,7 +256,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "DECISION_FALSE",
-                List.of());
+                List.of(), null);
         RulePlanException root = assertThrows(
                 RulePlanException.class,
                 () -> new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
@@ -283,7 +283,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "NO_ACTIVE_ITEM",
-                List.of("request.items"));
+                List.of("request.items"), null);
         RuleDecisionPlan plan = new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
                 .compile(simpleDefinition(List.of(slot), List.of(collection)));
         JsonNode facts = JSON.readTree("""
@@ -311,7 +311,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "MISSING_FALSE",
-                List.of("request.requiredValue"));
+                List.of("request.requiredValue"), null);
         DecisionBinding denying = new DecisionBinding(
                 "denying",
                 "denying",
@@ -323,7 +323,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "INDEPENDENT_DENY",
-                List.of());
+                List.of(), null);
         RuleDecisionPlan plan = new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
                 .compile(simpleDefinition(List.of(missingSlot, denyingSlot), List.of(missing, denying)));
 
@@ -388,7 +388,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 null,
                 null,
-                List.of());
+                List.of(), null);
         RuleDecisionPlan plan = new PraxisRulePlanCompiler(registry)
                 .compile(simpleDefinition(List.of(slot), List.of(binding)));
 
@@ -436,7 +436,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "PREREQUISITE_FALSE",
-                List.of());
+                List.of(), null);
         DecisionBinding inconclusive = new DecisionBinding(
                 "decision",
                 "decision",
@@ -448,7 +448,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "DECISION_FALSE",
-                List.of("request.requiredValue"));
+                List.of("request.requiredValue"), null);
         DecisionBinding effect = new DecisionBinding(
                 "effect",
                 "effect",
@@ -460,7 +460,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 null,
                 null,
-                List.of());
+                List.of(), null);
         RuleDecisionPlan plan = new PraxisRulePlanCompiler(registry)
                 .compile(simpleDefinition(
                         List.of(prerequisiteSlot, decisionSlot, effectSlot),
@@ -498,7 +498,7 @@ class PraxisRuleSetEngineTest {
                 guard.enabled(),
                 guard.falseDecision(),
                 guard.falseReasonCode(),
-                guard.requiredFactPaths());
+                guard.requiredFactPaths(), null);
         RuleDecisionPlan plan = new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
                 .compile(simpleDefinition(
                         List.of(guardSlot, applicabilitySlot),
@@ -528,7 +528,7 @@ class PraxisRuleSetEngineTest {
         DecisionBinding validIntent = new DecisionBinding(
                 "intent", "intent", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.java("benefits:intent", "1.0.0"), List.of("decision", "guard"), 2, true,
-                null, null, List.of());
+                null, null, List.of(), null);
 
         new PraxisRulePlanCompiler(registry).compile(simpleDefinition(
                 List.of(guardSlot, decisionSlot, intentSlot), List.of(guard, decision, validIntent)));
@@ -536,7 +536,7 @@ class PraxisRuleSetEngineTest {
         DecisionBinding invalidIntent = new DecisionBinding(
                 "intent", "intent", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.java("benefits:intent", "1.0.0"), List.of("guard"), 2, true,
-                null, null, List.of());
+                null, null, List.of(), null);
         RulePlanException failure = assertThrows(
                 RulePlanException.class,
                 () -> new PraxisRulePlanCompiler(registry).compile(simpleDefinition(
@@ -552,7 +552,7 @@ class PraxisRuleSetEngineTest {
                 new org.praxisplatform.rules.contract.RuleExecutorRef(
                         org.praxisplatform.rules.contract.RuleExecutorType.JSON_LOGIC,
                         null, "9.9", expression("true")),
-                List.of(), 1, true, RuleDecision.DENY, "DECISION_FALSE", List.of());
+                List.of(), 1, true, RuleDecision.DENY, "DECISION_FALSE", List.of(), null);
 
         RulePlanException failure = assertThrows(
                 RulePlanException.class,
@@ -579,7 +579,7 @@ class PraxisRuleSetEngineTest {
         DecisionBinding binding = new DecisionBinding(
                 "decision", "decision", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.java("benefits:bounded", "1.0.0"), List.of(), 1, true,
-                null, null, List.of());
+                null, null, List.of(), null);
         RuleDecisionPlan plan = new PraxisRulePlanCompiler(registry)
                 .compile(simpleDefinition(List.of(decisionSlot), List.of(binding)));
 
@@ -605,7 +605,7 @@ class PraxisRuleSetEngineTest {
         DecisionBinding binding = new DecisionBinding(
                 "decision", "decision", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.java(implementationKey, "1.0.0"), List.of(), 1, true,
-                null, null, List.of());
+                null, null, List.of(), null);
 
         RulePlanException failure = assertThrows(
                 RulePlanException.class,
@@ -660,7 +660,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "REQUEST_NOT_AUTHORIZED",
-                List.of("actor.permissions"));
+                List.of("actor.permissions"), null);
         DecisionBinding worker = new DecisionBinding(
                 "worker.eligibility",
                 "worker.eligibility",
@@ -673,7 +673,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "WORKER_NOT_ELIGIBLE",
-                List.of("worker.status"));
+                List.of("worker.status"), null);
         DecisionBinding calculation = new DecisionBinding(
                 "grant.calculation",
                 "grant.calculation",
@@ -685,7 +685,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 null,
                 null,
-                List.of("request.requestedAmount"));
+                List.of("request.requestedAmount"), null);
         DecisionBinding budget = new DecisionBinding(
                 "budget.availability",
                 "budget.availability",
@@ -698,7 +698,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 RuleDecision.DENY,
                 "BUDGET_INSUFFICIENT",
-                List.of("budget.availableAmount", "request.requestedAmount"));
+                List.of("budget.availableAmount", "request.requestedAmount"), null);
         List<DecisionBinding> bindings = reverseInputOrder
                 ? List.of(budget, calculation, worker, authorization)
                 : List.of(authorization, worker, calculation, budget);
@@ -737,7 +737,7 @@ class PraxisRuleSetEngineTest {
                 stage,
                 SlotCardinality.SINGLE,
                 policy,
-                DecisionAggregationPolicy.SINGLE_RESULT);
+                DecisionAggregationPolicy.SINGLE_RESULT, null);
     }
 
     private DecisionBinding jsonBinding(
@@ -757,7 +757,7 @@ class PraxisRuleSetEngineTest {
                 true,
                 falseDecision,
                 reason,
-                List.of());
+                List.of(), null);
     }
 
     private JsonNode expression(String value) throws Exception {

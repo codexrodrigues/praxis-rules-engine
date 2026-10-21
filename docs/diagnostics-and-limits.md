@@ -45,3 +45,11 @@ finitos. `FACTS_LIMIT_EXCEEDED` cobre o orçamento canônico antes do hash, alé
 dos limites estruturais existentes. O tamanho compacto de um expoente decimal
 não elimina esse limite. Ambos encerram sem digest/execução; não são negações
 de negócio. O orçamento de facts não consome o orçamento de outputs.
+
+
+## Parâmetros de produto (fonte contract 1.6)
+
+`PLAN_PARAMETER_TEMPLATE_INVALID`, `PLAN_PARAMETER_VALUES_INVALID` e
+`PLAN_PARAMETERIZATION_INVALID` distinguem falha de restrição, de valores e de
+vínculo/authoring indevido. Limites de 128 parâmetros, 256 sites e JSON nativo
+limitado também cobrem a expansão combinada. Ver [ADR-03](p2f-adr-03-composition-and-overrides.md).

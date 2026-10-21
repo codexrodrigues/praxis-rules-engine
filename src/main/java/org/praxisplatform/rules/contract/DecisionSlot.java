@@ -9,6 +9,7 @@ import java.util.Objects;
  * @param stage closed execution stage
  * @param cardinality number of enabled bindings permitted
  * @param overridePolicy product-owned customization boundary
+ * @param parameterTemplate product-owned scalar template, required for PARAMETERIZABLE slots
  * @param aggregationPolicy closed policy used to consolidate enabled bindings
  */
 public record DecisionSlot(
@@ -16,7 +17,8 @@ public record DecisionSlot(
         DecisionStage stage,
         SlotCardinality cardinality,
         OverridePolicy overridePolicy,
-        DecisionAggregationPolicy aggregationPolicy) {
+        DecisionAggregationPolicy aggregationPolicy,
+        RuleParameterTemplate parameterTemplate) {
 
     /** Normalizes and validates the complete slot contract. */
     public DecisionSlot {

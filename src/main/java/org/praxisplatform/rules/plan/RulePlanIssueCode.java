@@ -14,6 +14,12 @@ public enum RulePlanIssueCode {
     PLAN_CARDINALITY_INVALID,
     /** Customer composition is incompatible with product override policy. */
     PLAN_OVERRIDE_INVALID,
+    /** Product parameter template is missing, ambiguous, unsupported or invalid. */
+    PLAN_PARAMETER_TEMPLATE_INVALID,
+    /** Declared/default parameter values violate the product schema. */
+    PLAN_PARAMETER_VALUES_INVALID,
+    /** Parameterization is detached from its exact product template or changes execution metadata. */
+    PLAN_PARAMETERIZATION_INVALID,
     /** A protected guard is not structurally protected. */
     PLAN_PROTECTED_GUARD_INVALID,
     /** A binding outcome or policy is incompatible with its execution stage. */

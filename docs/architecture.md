@@ -109,3 +109,13 @@ mede JSON canônico UTF-8 antes da cópia, com limite por contexto e cumulativo;
 falha de transporte não retorna resultados parciais. A adoção requer coordenada
 oficial verificada em [release readiness](release-readiness.md) e provas nos
 consumidores; a publicação isolada do engine não conclui essa integração.
+
+
+## Parametrização de templates (fonte contract 1.6)
+
+O [ADR-03](p2f-adr-03-composition-and-overrides.md) fecha a lacuna de
+PARAMETERIZE: o slot publica restrição e molde de produto, o binding source
+publica identidade e valores, o resolver puro materializa literais e o
+compilador valida a execução derivada. Schema/template/valores entram nos
+digests. Config preserva ownership e aprovação; o runtime não acessa catálogo,
+store, banco ou tenant. Nenhum novo operador JSON Logic foi introduzido.

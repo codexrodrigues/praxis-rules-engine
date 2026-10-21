@@ -58,7 +58,11 @@ public final class PraxisRuleSnapshotCompiler {
                 plan.definition().slots().stream()
                         .sorted(Comparator.comparing(slot -> slot.slotKey()))
                         .toList(),
-                plan.orderedBindings(),
+                plan.orderedBindings().stream()
+                        .map(compiled -> plan.definition().bindings().stream()
+                                .filter(source -> source.bindingKey().equals(compiled.bindingKey()))
+                                .findFirst().orElseThrow())
+                        .toList(),
                 plan.definition().compatibility(),
                 plan.definition().failPolicy());
         PublishedRuleSnapshot normalized = new PublishedRuleSnapshot(

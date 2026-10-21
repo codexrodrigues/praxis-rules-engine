@@ -8,8 +8,20 @@ import org.praxisplatform.rules.jsonlogic.model.JsonLogicLimits;
 
 /** Native JSON admission and capped canonical byte counting at the RuleSet boundary.
  * One instance tracks output transfer only; facts validation has an independent budget. */
-final class RuleJsonBudget {
+public final class RuleJsonBudget {
     private int transferredBytes;
+
+    RuleJsonBudget() {
+    }
+
+    /**
+     * Admits bounded native finite JSON without invoking serializers or expanding numbers.
+     * @param value JSON value crossing a pure engine contract boundary
+     * @throws IllegalArgumentException for unsupported JSON or structural/byte overflow
+     */
+    public static void validateValue(JsonNode value) {
+        validateFacts(value);
+    }
 
     static void validateFacts(JsonNode facts) {
         requireJsonValue(facts);
