@@ -83,13 +83,11 @@ registry versionado e evaluator service-level pertencem ao repositorio canonico
 `codexrodrigues/praxis-rules-engine`. Todo push ou pull request para `main` passa
 por `mvn clean verify`. O POM de desenvolvimento permanece `0.0.1-SNAPSHOT`.
 
-O registro de publicação em [release readiness](docs/release-readiness.md)
-identifica `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.15`, contract
-`1.4`, já disponível no Maven Central. A beta.14 anunciou hash diferente do
-corpus empacotado; a beta.15 corrigiu esse drift, mas a auditoria posterior
-reproduziu falha no checkout Windows por LF/CRLF. Nenhuma das duas é baseline
-verde entre plataformas. Gates Linux/Windows e smoke downstream Central-only
-continuam necessários para recomendar uma próxima release.
+A coordenada pública e seus gates estão registrados em
+[release readiness](docs/release-readiness.md). Historicamente, a beta.14 anunciou
+hash diferente do corpus empacotado; a beta.15 corrigiu esse drift, mas falhou
+no checkout Windows por LF/CRLF. Nenhuma das duas é baseline verde entre
+plataformas. Uma sucessora requer gates Linux/Windows e smoke Central-only.
 
 O smoke histórico da beta.14 comprovou consumo da coordenada pública, trust de
 extensões, proposta tipada, allowlist/schema no host e persistência transacional;
@@ -97,9 +95,9 @@ não cobriu a invariável de bytes/hash. A beta.13 permanece marco histórico de
 extensões protegidas. A beta.7 não deve ser adotada por hosts porque consolidava
 incorretamente ALLOW intermediário com NOT_APPLICABLE terminal.
 
-A fonte atual acrescenta contract `1.5`, ainda não publicado, conforme a seção
-abaixo e o ADR-14. Ela não deve ser confundida com a correção compatível 1.4
-anteriormente planejada nem com uma coordenada Maven disponível.
+O contrato `1.5`, descrito abaixo e no ADR-14, exige composições compatíveis
+e migração governada nos consumidores. Publicação do engine e adoção no host
+são gates separados; consultar a evidência da coordenada em release readiness.
 
 Para uma explicação didática de como o motor se integra ao control plane e aos
 hosts corporativos, consulte o
@@ -109,13 +107,13 @@ Consulte também [architecture.md](docs/architecture.md),
 [release-readiness.md](docs/release-readiness.md) e o
 [pacote de ADRs da plataforma de regras](docs/p2f-rule-platform-adrs.md).
 
-## Evolução de fonte não publicada — engine contract 1.5
+## Engine contract 1.5 — outputs diretos
 
 O checkout implementa `RuleExecutorContext.directDependencyOutputs` para
 composição de cálculos Java no DAG existente, conforme
 [ADR-14](docs/p2f-adr-14-direct-dependency-outputs.md). A revisão 1.5 exige
 PRODUCT/JAVA em DOMAIN/POST nos dois endpoints, preserva facts e JSON Logic e
 limita a transferência por contexto e por avaliação antes de copiar valores.
-RuleSets 1.4 são rejeitados; o corpus/dialeto não muda. A coordenada publicada
-e as evidências históricas descritas acima não provam disponibilidade/adopção
-dessa revisão. Nenhuma versão Maven foi alterada ou publicada neste incremento.
+RuleSets 1.4 são rejeitados; o corpus/dialeto não muda. A adoção nos hosts exige a
+coordenada pública verificada e provas próprias de integração; publicação do
+engine não comprova o exemplo financeiro nem a UI.

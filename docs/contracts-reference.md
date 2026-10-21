@@ -44,7 +44,7 @@
 | `0.1.0-beta.13` | `1.3` | `1.0` | Marco público anterior de `RuleExtensionTrust`, com prova downstream Central-only. |
 | `0.1.0-beta.14` | `1.4` | `1.0` | Publicada, mas não recomendada: hash anunciado diverge do corpus empacotado. |
 | `0.1.0-beta.15` | `1.4` | `1.0` | Publicada segundo o registro de release readiness; corrige corpus/hash e `var`, mas falha de LF/CRLF no Windows impede baseline verde. |
-| checkout atual | `1.5` | `1.0` | Outputs diretos Java; fonte ainda não publicada nem adotada downstream. |
+| `0.1.0-beta.16` | `1.5` | `1.0` | Publicada pelo workflow oficial; CI Linux/Windows e smoke neutro Central-only aprovados. Adoção Config/hosts pendente; ver release readiness. |
 
 O SHA-256 do corpus e parte de `RuleRuntimeCompatibility`; consumidores nao devem aceitar RuleSets com coordenadas divergentes. O contrato efetivo de um consumidor deve ser provado contra a coordenada Maven publicada, nao inferido de uma fonte candidata em `main`.
 

@@ -37,19 +37,17 @@
 
 ## Current public line
 
-The latest published coordinate is
-`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.15`, with engine
-contract `1.4`. Beta.14 advertised a corpus hash different from its packaged
-bytes. Beta.15 corrected that source-level drift, but a later audit reproduced
-a Windows checkout failure because the repository did not govern LF/CRLF.
-Neither beta.14 nor beta.15 is a green cross-platform baseline for new
-consumers. The earlier corrective plan retained contract 1.4 on the active
-`0.1.0-beta.*` line. The current source additionally implements contract 1.5,
-which remains unpublished and requires compatible consumer compositions and
-adoption. A subsequent release must not be recommended until Linux and Windows
-CI pass and downstream proof verifies the published bytes and advertised hash. See
-[release readiness](docs/release-readiness.md) and the
-[contract reference](docs/contracts-reference.md#compatibilidade-publicada).
+The current public coordinate and its publication evidence are recorded in
+[release readiness](docs/release-readiness.md). The active release line remains
+`0.1.0-beta.*`; the source implements engine contract `1.5`. The runtime contract
+is an exact compatibility boundary: 1.4 compositions require governed migration
+and new approval before execution with 1.5. Publication does not establish host
+adoption. See the [contract reference](docs/contracts-reference.md#compatibilidade-publicada).
+
+Beta.14 advertised a corpus hash different from its packaged bytes. Beta.15
+corrected that drift but failed a Windows checkout audit because LF/CRLF was not
+governed. A successor must pass Linux and Windows CI and a Central-only smoke
+that checks both the advertised corpus hash and packaged bytes.
 
 Compatible work remains on the active `0.1.0-beta.*` line. A new major requires
 an explicitly governed breaking-change plan, consumer impact map, migration

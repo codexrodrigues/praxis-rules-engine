@@ -118,19 +118,16 @@ integrais.
 
 ## Publicação registrada e evolução da fonte
 
-O [registro de release readiness](release-readiness.md) identifica a beta.15,
-engine contract `1.4`, como publicada no Maven Central por workflow oficial.
-A prova downstream histórica da beta.14 consumiu somente sua coordenada
-pública. A beta.14 anunciou hash divergente dos bytes do corpus; a beta.15
-corrigiu esse drift, mas falha no checkout Windows por LF/CRLF. Nenhuma das duas
-é baseline verde entre plataformas; recomendar outra release exige gates
-Linux/Windows e novo smoke downstream Central-only.
+O [registro de release readiness](release-readiness.md) identifica a coordenada
+pública e as provas associadas. Beta.14 e beta.15 são marcos históricos do
+contrato 1.4, com problemas de hash anunciado e checkout Windows descritos
+naquele registro; não devem substituir a prova da coordenada adotada.
 
-A fonte atual implementa contract `1.5`, ainda não publicado, para outputs
-Java diretos com política e orçamentos definidos no
-[ADR-14](p2f-adr-14-direct-dependency-outputs.md). Isso é uma evolução contratual
-da fonte, distinta da correção compatível 1.4 anteriormente planejada. O POM
-continua `0.0.1-SNAPSHOT`; não há coordenada Maven 1.5 provada por esse checkout.
+O contrato `1.5` fornece outputs Java diretos com política e orçamentos definidos
+no [ADR-14](p2f-adr-14-direct-dependency-outputs.md). Trata-se de uma evolução
+contratual distinta da correção compatível 1.4 anteriormente planejada. O POM
+permanece `0.0.1-SNAPSHOT`; o workflow oficial define a versão do artefato.
+Adoção Config/host exige migração governada, compilação/aprovação e testes próprios.
 Baseline de build permanece Java 21 e Maven 3.9+.
 
 ## Evolução planejada
