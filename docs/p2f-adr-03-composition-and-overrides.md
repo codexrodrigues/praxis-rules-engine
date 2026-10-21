@@ -166,4 +166,5 @@ admissão do host Quickstart, Policy Studio/Angular via projeção Config, docs
 públicas e corpus HTTP quando adotarem a nova coordenada. Não há nova aresta de
 dependência entre libs Angular, endpoint ou alteração do corpus JSON Logic.
 Adoção e provas downstream requerem release oficial; o POM candidato
-`0.1.0-beta.16-SNAPSHOT` serve apenas ao desenvolvimento isolado.
+`0.1.0-beta.16-SNAPSHOT` identificou a prova histórica de desenvolvimento isolado;
+a coordenada preparada para publicação é `0.1.0-beta.17`.
