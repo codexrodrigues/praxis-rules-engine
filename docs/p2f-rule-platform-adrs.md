@@ -24,6 +24,7 @@ autoridade.
 | [P2F-ADR-11](p2f-adr-11-typed-transformations.md) | transformação tipada como proposta pura | aceito, publicado e consumido; materialização e auditoria redigida provadas no host |
 | [P2F-ADR-12](p2f-adr-12-observation-redaction-and-retention.md) | observation, redaction e retenção | aceito; host sanitizado e ciclo de vida governado provados no Quickstart |
 | [P2F-ADR-13](p2f-adr-13-deterministic-boundary-hardening.md) | hardening determinístico de fronteiras | aceito para engine contract `1.4`; publicação e smoke downstream pendentes |
+| [P2F-ADR-14](p2f-adr-14-direct-dependency-outputs.md) | outputs diretos Java com política estrutural e orçamento cumulativo | implementado na fonte contract `1.5`; release e adoção pendentes |
 
 ## Gate resultante
 

@@ -58,3 +58,10 @@ O plano limita slots, bindings, arestas e fan-out. Facts, expressões e outputs
 usam limites de bytes, profundidade, nós, arrays e strings na avaliação. Timeout dependente de
 wall clock não altera semântica; o runtime usa budgets determinísticos e o host
 pode impor deadline externo.
+
+## Evolução do transporte
+
+O [ADR-14](p2f-adr-14-direct-dependency-outputs.md) fecha na fonte contract `1.5`
+o acesso Java aos outputs ALLOW diretos, com política estrutural PRODUCT/JAVA
+em DOMAIN/POST, isolamento e orçamento por contexto e cumulativo. Release e
+adoção downstream permanecem pendentes.

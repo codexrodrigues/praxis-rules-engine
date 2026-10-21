@@ -6,7 +6,7 @@ import org.praxisplatform.rules.jsonlogic.model.JsonLogicLimits;
  * Deterministic structural limits published by the RuleSet engine contract.
  *
  * <p>Hosts may reject smaller payloads before calling the engine, but they must not assume the
- * engine accepts values above these limits. These constants are part of engine contract 1.4.</p>
+ * engine accepts values above these limits. These constants are part of engine contract 1.5.</p>
  */
 public final class RuleEngineLimits {
     /** Maximum reason codes accepted across one evaluation result. */
@@ -15,7 +15,8 @@ public final class RuleEngineLimits {
     /** Maximum typed transformation proposals accepted across one evaluation result. */
     public static final int MAX_AGGREGATED_TRANSFORMATIONS = 256;
 
-    /** Maximum UTF-8 bytes accepted by the complete public result envelope. */
+    /** Maximum UTF-8 bytes accepted by the complete public result envelope, each direct
+     * dependency output context, and the sum of those contexts per evaluation. */
     public static final int MAX_PUBLIC_RESULT_BYTES = JsonLogicLimits.DEFAULT.maxExpressionBytes();
 
     private RuleEngineLimits() {

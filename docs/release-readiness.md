@@ -91,3 +91,14 @@ recomendada como baseline verde. A correção mantém a comparação byte a byte
 versiona a política de finais de linha e adiciona `clean verify` no Windows CI.
 Ela deve seguir na mesma linha compatível como próxima `0.1.0-beta.*`, somente
 após gates Linux/Windows e smoke downstream Central-only.
+
+## Fonte 1.5 — encadeamento direto, ainda não publicado
+
+O [ADR-14](p2f-adr-14-direct-dependency-outputs.md) evolui a fonte para contrato
+1.5. O plano corretivo compatível 1.4 acima permanece registro histórico; não
+é a descrição da fonte atual. A implementação e o gate local não autorizam
+recomendar uma coordenada 1.5 inexistente. Preservar os gates Linux/Windows,
+publicação oficial, hashes/corpus e consumo Central-only. Config e hosts devem
+ser alinhados pela migração governada, com novas composições/aprovações e sem
+tráfego misto de contratos incompatíveis. Não reescrever snapshots 1.4 nem
+concluir que leitura histórica implica capacidade de ativação/execução.

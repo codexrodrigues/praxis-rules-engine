@@ -116,21 +116,22 @@ auditoria, proteção de dados sensíveis e observabilidade sem exposição de
 facts. O log deve favorecer hashes e identificadores governados, não payloads
 integrais.
 
-## Estado público atual
+## Publicação registrada e evolução da fonte
 
-- Coordenada: `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.14`.
-- Contrato do motor: `1.4`.
-- Baseline: Java 21 e Maven 3.9+.
-- Publicação: workflow oficial por tag, com artefatos assinados no Maven Central.
-- Prova downstream: host de referência consumindo apenas a coordenada pública.
+O [registro de release readiness](release-readiness.md) identifica a beta.15,
+engine contract `1.4`, como publicada no Maven Central por workflow oficial.
+A prova downstream histórica da beta.14 consumiu somente sua coordenada
+pública. A beta.14 anunciou hash divergente dos bytes do corpus; a beta.15
+corrigiu esse drift, mas falha no checkout Windows por LF/CRLF. Nenhuma das duas
+é baseline verde entre plataformas; recomendar outra release exige gates
+Linux/Windows e novo smoke downstream Central-only.
 
-A beta.14 permanece disponível, mas não é recomendada para novos consumidores:
-ela anuncia hash diferente dos bytes do corpus empacotado. A fonte atual prepara
-a beta.15 corretiva; somente sua publicação e um novo smoke downstream poderão
-restaurar a recomendação pública do contract `1.4`.
-
-O `pom.xml` do branch de desenvolvimento continua em `0.0.1-SNAPSHOT`; isso não
-altera a coordenada pública recomendada.
+A fonte atual implementa contract `1.5`, ainda não publicado, para outputs
+Java diretos com política e orçamentos definidos no
+[ADR-14](p2f-adr-14-direct-dependency-outputs.md). Isso é uma evolução contratual
+da fonte, distinta da correção compatível 1.4 anteriormente planejada. O POM
+continua `0.0.1-SNAPSHOT`; não há coordenada Maven 1.5 provada por esse checkout.
+Baseline de build permanece Java 21 e Maven 3.9+.
 
 ## Evolução planejada
 

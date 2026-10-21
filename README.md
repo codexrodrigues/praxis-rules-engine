@@ -79,26 +79,27 @@ Maven 3.9+ e Java exatamente 21 sao impostos pelo Enforcer. O build gera JAR bin
 ## Estado e ownership
 
 O runtime JSON Logic, contratos RuleSet/snapshot, planner deterministico,
-registry versionado e evaluator service-level estao publicados. O repositorio
-canonico e `codexrodrigues/praxis-rules-engine` e todo push ou pull request para
-`main` passa por `mvn clean verify`. O POM de desenvolvimento permanece
-`0.0.1-SNAPSHOT`; a coordenada publica atual e
-`io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.14`, com engine contract
-`1.4`. A auditoria posterior comprovou que essa release anuncia o hash antigo
-do corpus apesar de empacotar o corpus de 2026-07-17; por isso ela não deve ser
-adotada por novos consumidores. A correção está preparada para a próxima beta
-da linha ativa. O workflow oficial de publicação e o smoke downstream do
-Praxis API Quickstart usando somente o Maven Central foram concluídos para a
-beta.14, mas não cobriam essa invariável. A prova anterior cobre o
-consumo da coordenada pública, trust de extensões, proposta tipada,
-allowlist/schema no host e persistência transacional.
+registry versionado e evaluator service-level pertencem ao repositorio canonico
+`codexrodrigues/praxis-rules-engine`. Todo push ou pull request para `main` passa
+por `mvn clean verify`. O POM de desenvolvimento permanece `0.0.1-SNAPSHOT`.
 
-A beta.13 permanece como o marco anterior das extensões protegidas. A beta.14
-endurece as fronteiras determinísticas descritas na P2F-ADR-13, mas possui o
-drift de hash/corpus acima. A próxima beta corretiva preserva contract `1.4` e
-deve ser comprovada novamente no downstream. A
-`0.1.0-beta.7` não deve ser adotada por hosts porque consolidava incorretamente
-`ALLOW` intermediário com `NOT_APPLICABLE` terminal.
+O registro de publicação em [release readiness](docs/release-readiness.md)
+identifica `io.github.codexrodrigues:praxis-rules-engine:0.1.0-beta.15`, contract
+`1.4`, já disponível no Maven Central. A beta.14 anunciou hash diferente do
+corpus empacotado; a beta.15 corrigiu esse drift, mas a auditoria posterior
+reproduziu falha no checkout Windows por LF/CRLF. Nenhuma das duas é baseline
+verde entre plataformas. Gates Linux/Windows e smoke downstream Central-only
+continuam necessários para recomendar uma próxima release.
+
+O smoke histórico da beta.14 comprovou consumo da coordenada pública, trust de
+extensões, proposta tipada, allowlist/schema no host e persistência transacional;
+não cobriu a invariável de bytes/hash. A beta.13 permanece marco histórico de
+extensões protegidas. A beta.7 não deve ser adotada por hosts porque consolidava
+incorretamente ALLOW intermediário com NOT_APPLICABLE terminal.
+
+A fonte atual acrescenta contract `1.5`, ainda não publicado, conforme a seção
+abaixo e o ADR-14. Ela não deve ser confundida com a correção compatível 1.4
+anteriormente planejada nem com uma coordenada Maven disponível.
 
 Para uma explicação didática de como o motor se integra ao control plane e aos
 hosts corporativos, consulte o
@@ -107,3 +108,14 @@ Consulte também [architecture.md](docs/architecture.md),
 [operator-conformance-matrix.md](docs/operator-conformance-matrix.md),
 [release-readiness.md](docs/release-readiness.md) e o
 [pacote de ADRs da plataforma de regras](docs/p2f-rule-platform-adrs.md).
+
+## Evolução de fonte não publicada — engine contract 1.5
+
+O checkout implementa `RuleExecutorContext.directDependencyOutputs` para
+composição de cálculos Java no DAG existente, conforme
+[ADR-14](docs/p2f-adr-14-direct-dependency-outputs.md). A revisão 1.5 exige
+PRODUCT/JAVA em DOMAIN/POST nos dois endpoints, preserva facts e JSON Logic e
+limita a transferência por contexto e por avaliação antes de copiar valores.
+RuleSets 1.4 são rejeitados; o corpus/dialeto não muda. A coordenada publicada
+e as evidências históricas descritas acima não provam disponibilidade/adopção
+dessa revisão. Nenhuma versão Maven foi alterada ou publicada neste incremento.
