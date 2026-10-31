@@ -1,6 +1,6 @@
 # Praxis Rules Engine
 
-Core Java 21 puro, embarcavel e deterministico para o dialeto JSON Logic da plataforma Praxis.
+Core Java 21 puro, embarcavel e deterministico para o dialeto JSON Logic e avaliacao de `RuleSet` da **Praxis Platform** — garantindo que regras e politicas descritas uma vez sejam avaliadas de forma deterministica (5 estados) tanto no backend quanto em interfaces tradicionais, interfaces generativas, agentes de IA e integracoes.
 
 ## Responsabilidade
 
