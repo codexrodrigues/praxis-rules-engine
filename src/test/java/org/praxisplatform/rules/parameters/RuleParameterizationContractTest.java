@@ -189,7 +189,7 @@ class RuleParameterizationContractTest {
         assertFailure(RulePlanIssueCode.PLAN_PARAMETERIZATION_INVALID,
                 () -> new PraxisRulePlanCompiler(EMPTY).compile(definition(template(), product)));
         var forbidden = new DecisionSlot("threshold", DecisionStage.PROTECTED_GUARD, SlotCardinality.SINGLE,
-                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null);
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
         var def = new RuleSetDefinition(ref(), List.of("request"), List.of(forbidden),
                 List.of(binding(input)), RuleRuntimeCompatibility.current(), RuleFailPolicy.FAIL_CLOSED);
         assertFailure(RulePlanIssueCode.PLAN_OVERRIDE_INVALID,
@@ -388,7 +388,7 @@ class RuleParameterizationContractTest {
 
     private static DecisionSlot slot(RuleParameterTemplate template) {
         return new DecisionSlot("threshold", DecisionStage.DOMAIN_DECISION, SlotCardinality.SINGLE,
-                OverridePolicy.PARAMETERIZABLE, DecisionAggregationPolicy.SINGLE_RESULT, template);
+                OverridePolicy.PARAMETERIZABLE, DecisionAggregationPolicy.SINGLE_RESULT, template, java.util.List.of());
     }
 
     private static DecisionBinding binding(RuleParameterization parameterization) {

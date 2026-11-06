@@ -32,6 +32,80 @@ class PraxisRuleSnapshotCompilerTest {
     private static final String HASH_B = "B".repeat(64);
 
     @Test
+    void rejectsPreviousRoundCorpusForPlansAndSnapshots() throws Exception {
+        var current = snapshot(false, "snapshot-round", null, 1);
+        var definition = current.ruleSet();
+        var previous = new RuleRuntimeCompatibility(
+                RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION,
+                RuleRuntimeCompatibility.JSON_LOGIC_DIALECT_VERSION,
+                "E890925C7306A2646CF86443C29ABDDEF0C0645C6228F1DE4A8740E45253D181");
+        var oldDefinition = new RuleSetDefinition(definition.ref(), definition.availableRoots(),
+                definition.slots(), definition.bindings(), previous, definition.failPolicy());
+        var oldSnapshot = new PublishedRuleSnapshot(current.snapshotContractVersion(), current.snapshotKey(),
+                current.tenantId(), current.environment(), current.ownerServiceKey(), current.publicationRevision(),
+                current.publishedAtUtc(), current.supersedesSnapshotKey(), current.requiredHostContractVersion(),
+                current.validFromUtc(), current.validUntilUtc(), current.sources(), current.approvals(), oldDefinition);
+        var registry = RuleBindingExecutorRegistry.empty();
+        var planFailure = assertThrows(org.praxisplatform.rules.plan.RulePlanException.class,
+                () -> new org.praxisplatform.rules.plan.PraxisRulePlanCompiler(registry).compile(oldDefinition));
+        assertEquals(org.praxisplatform.rules.plan.RulePlanIssueCode.PLAN_COMPATIBILITY_INVALID,
+                planFailure.getCode());
+        var snapshotFailure = assertThrows(org.praxisplatform.rules.plan.RulePlanException.class,
+                () -> new PraxisRuleSnapshotCompiler(registry).compile(oldSnapshot, "quickstart/1.0"));
+        assertEquals(org.praxisplatform.rules.plan.RulePlanIssueCode.PLAN_COMPATIBILITY_INVALID,
+                snapshotFailure.getCode());
+        assertEquals(previous, oldSnapshot.ruleSet().compatibility());
+        var currentPlan = new PraxisRuleSnapshotCompiler(registry).compile(current, "quickstart/1.0").plan();
+        var restoredOldPlan = new org.praxisplatform.rules.plan.RuleDecisionPlan(oldDefinition,
+                currentPlan.orderedBindings(), currentPlan.slotsByKey(), currentPlan.implementationRefs(), HASH_A);
+        var result = new org.praxisplatform.rules.runtime.PraxisRuleSetEngine(registry).evaluate(
+                restoredOldPlan, JSON.createObjectNode(), "2026-11-04T03:00:00Z", "UTC");
+        assertEquals(RuleDecision.TECHNICAL_ERROR, result.decision());
+        assertEquals(List.of("PLAN_COMPATIBILITY_INVALID"), result.reasonCodes());
+        assertEquals(List.of(), result.bindingResults());
+    }
+
+    @Test
+    void customerDescriptorsSurviveRoundTripAndBindBothHashes() throws Exception {
+        var compiler = new PraxisRuleSnapshotCompiler(RuleBindingExecutorRegistry.empty());
+        var original = compiler.compile(withCustomerDescriptor("CUSTOMER_DENIAL", "First message"), "quickstart/1.0");
+        var restored = compiler.compile(JSON.readValue(JSON.writeValueAsBytes(original.snapshot()),
+                PublishedRuleSnapshot.class), "quickstart/1.0");
+        var edited = compiler.compile(withCustomerDescriptor("CUSTOMER_DENIAL", "Edited message"), "quickstart/1.0");
+        assertEquals(original, restored);
+        assertNotEquals(original.snapshotContentHash(), edited.snapshotContentHash());
+        assertNotEquals(original.plan().planDigest(), edited.plan().planDigest());
+        var result = new org.praxisplatform.rules.runtime.PraxisRuleSetEngine(RuleBindingExecutorRegistry.empty())
+                .evaluate(restored.plan(), JSON.createObjectNode().putObject("request"),
+                        "2026-07-13T15:00:00Z", "UTC");
+        var violation = new org.praxisplatform.rules.violation.PraxisRuleViolationException(
+                restored.plan(), result, ignored -> java.util.Optional.empty());
+        assertEquals("First message", violation.getViolations().getFirst().messagePtBr());
+        assertThrows(org.praxisplatform.rules.plan.RulePlanException.class,
+                () -> compiler.compile(withCustomerDescriptor("NOT_ELIGIBLE", "Collision"), "quickstart/1.0"));
+    }
+
+    private PublishedRuleSnapshot withCustomerDescriptor(String code, String message) throws Exception {
+        var base = snapshot(false, "snapshot-local", null, 1);
+        var definition = base.ruleSet();
+        var slots = new java.util.ArrayList<>(definition.slots());
+        slots.add(new DecisionSlot("local", DecisionStage.DOMAIN_DECISION, SlotCardinality.MULTIPLE,
+                OverridePolicy.RESTRICT_ONLY, DecisionAggregationPolicy.DENY_OVERRIDES, null, java.util.List.of()));
+        var bindings = new java.util.ArrayList<>(definition.bindings());
+        bindings.add(new DecisionBinding("local", "local", DecisionSource.CUSTOMER,
+                org.praxisplatform.rules.contract.CompositionPolicy.AUGMENT,
+                RuleExecutorRef.jsonLogic(JSON.readTree("{\"===\":[true,false]}")), List.of(), 30, true,
+                RuleDecision.DENY, code, List.of(), null));
+        return new PublishedRuleSnapshot(base.snapshotContractVersion(), base.snapshotKey(), base.tenantId(),
+                base.environment(), base.ownerServiceKey(), base.publicationRevision(), base.publishedAtUtc(), null,
+                base.requiredHostContractVersion(), base.validFromUtc(), null, base.sources(), base.approvals(),
+                new RuleSetDefinition(definition.ref(), definition.availableRoots(), slots, bindings,
+                        definition.compatibility(), definition.failPolicy(), java.util.Map.of("local",
+                        new org.praxisplatform.rules.violation.RuleErrorDescriptor(
+                                code, "request", message, "tenant-policy", "BUSINESS_LOGIC"))));
+    }
+
+    @Test
     void normalizesEquivalentDefinitionsAndProducesStableContentHash() throws Exception {
         PraxisRuleSnapshotCompiler compiler = new PraxisRuleSnapshotCompiler(RuleBindingExecutorRegistry.empty());
 
@@ -124,7 +198,7 @@ class PraxisRuleSnapshotCompilerTest {
                 new RuleImplementationRef("benefits:amount", "1.0.0")));
         DecisionSlot calculationSlot = new DecisionSlot(
                 "calculation", DecisionStage.DOMAIN_DECISION, SlotCardinality.SINGLE,
-                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null);
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
         DecisionBinding calculation = new DecisionBinding(
                 "calculation", "calculation", DecisionSource.PRODUCT, null,
                 RuleExecutorRef.java("benefits:amount", "1.0.0"), List.of(), 10, true,
@@ -179,10 +253,10 @@ class PraxisRuleSnapshotCompilerTest {
     private RuleSetDefinition definition(boolean reverse) throws Exception {
         DecisionSlot authorizationSlot = new DecisionSlot(
                 "authorization", DecisionStage.PROTECTED_GUARD, SlotCardinality.SINGLE,
-                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null);
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
         DecisionSlot eligibilitySlot = new DecisionSlot(
                 "eligibility", DecisionStage.DOMAIN_DECISION, SlotCardinality.SINGLE,
-                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null);
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
         DecisionBinding authorization = new DecisionBinding(
                 "authorization", "authorization", DecisionSource.SECURITY, null,
                 RuleExecutorRef.jsonLogic(JSON.readTree("{\"===\":[true,true]}")), List.of(), 10, true,

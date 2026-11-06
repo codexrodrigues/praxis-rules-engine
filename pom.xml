@@ -13,7 +13,7 @@
 
     <groupId>io.github.codexrodrigues</groupId>
     <artifactId>praxis-rules-engine</artifactId>
-    <version>0.1.0-beta.17</version>
+    <version>0.1.0-beta.19-ergon.20261106.1</version>
     <packaging>jar</packaging>
 
     <name>Praxis Rules Engine</name>
@@ -42,6 +42,7 @@
     </scm>
 
     <properties>
+        <project.build.outputTimestamp>2026-11-06T20:30:00Z</project.build.outputTimestamp>
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -56,6 +57,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

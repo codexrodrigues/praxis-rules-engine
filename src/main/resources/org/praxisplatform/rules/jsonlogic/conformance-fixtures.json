@@ -1,5 +1,5 @@
 {
-  "version": "2026-07-17",
+  "version": "2026-11-05",
   "description": "Canonical typed FE/BE Json Logic conformance corpus for Praxis.",
   "operatorCatalog": [
     ["var","native",1,2],["==","native",2,2],["===","native",2,2],["!=","native",2,2],["!==","native",2,2],
@@ -9,13 +9,15 @@
     ["all","native",2,2],["some","native",2,2],["none","native",2,2],["+","native",1,null],["-","native",1,null],
     ["*","native",1,null],["/","native",2,null],["%","native",2,2],["min","native",1,null],["max","native",1,null],
     ["contains","praxis",2,2],["startsWith","praxis",2,2],["endsWith","praxis",2,2],["matches","praxis",2,2],
-    ["isBlank","praxis",1,1],["len","praxis",1,1],["round","praxis",1,1],["ceil","praxis",1,1],["floor","praxis",1,1],
+    ["isBlank","praxis",1,1],["len","praxis",1,1],["round","praxis",1,2],["ceil","praxis",1,1],["floor","praxis",1,1],
     ["abs","praxis",1,1],["coalesce","praxis",1,null],["now","praxis",0,0],["date","praxis",1,1],
     ["yearsSince","praxis",1,1],["monthsSince","praxis",1,1],["daysSince","praxis",1,1],["toNumber","praxis",1,1],
     ["stringify","praxis",1,1],["jsonGet","praxis",2,2],["hasKey","praxis",2,2],["isToday","praxis",1,1],
     ["inLast","praxis",3,3],["weekdayIn","praxis",2,2]
   ],
   "evaluationCases": [
+    { "id": "reduce-omitted-initial-is-null", "expression": { "===": [{ "reduce": [[1, 2], { "var": "accumulator" }] }, null] }, "data": {}, "expect": { "value": true, "truthy": true } },
+    { "id": "reduce-omitted-initial-default-does-not-replace-null", "expression": { "reduce": [[1, 2], { "var": ["accumulator", 7] }] }, "data": {}, "expect": { "value": null, "truthy": false } },
     {
       "id": "var-existing",
       "expression": {
@@ -960,6 +962,16 @@
         "truthy": true
       }
     },
+    {"id": "round-negative-tie","expression": {"round": [-1.5]},"data": {},"expect": {"value": -1,"truthy": true}},
+    {"id": "round-decimal","expression": {"round": [52.475,1]},"data": {},"expect": {"value": 52.5,"truthy": true}},
+    {"id": "round-negative-decimal-tie","expression": {"round": [-1.25,1]},"data": {},"expect": {"value": -1.2,"truthy": true}},
+    {"id": "round-null-precision","expression": {"round": [1.5,null]},"data": {},"expect": {"value": 2,"truthy": true}},
+    {"id": "round-negative-precision","expression": {"round": [1.5,-2]},"data": {},"expect": {"value": 2,"truthy": true}},
+    {"id": "round-fractional-precision","expression": {"round": [1.234,2.9]},"data": {},"expect": {"value": 1.23,"truthy": true}},
+    {"id": "round-precision-upper-bound","expression": {"round": [1.23456789123,20]},"data": {},"expect": {"value": 1.2345678912,"truthy": true}},
+    {"id": "round-overflow-positive", "expression": {"round": [1e308, 10]}, "data": {}, "expect": {"value": 1e308, "truthy": true}},
+    {"id": "round-overflow-negative", "expression": {"round": [-1e308, 10]}, "data": {}, "expect": {"value": -1e308, "truthy": true}},
+    {"id": "round-zero-result","expression": {"round": [-0.5]},"data": {},"expect": {"value": 0,"truthy": false}},
     {
       "id": "ceil",
       "expression": {
@@ -1262,11 +1274,19 @@
     }
   ],
   "evaluationErrorCases": [
+    { "id": "date-impossible-day", "expression": { "date": ["2024-02-30"] }, "data": {}, "expect": { "code": "RULE_TEMPORAL_INPUT_INVALID" } },
+    { "id": "date-non-leap-day", "expression": { "date": ["2023-02-29"] }, "data": {}, "expect": { "code": "RULE_TEMPORAL_INPUT_INVALID" } },
+    { "id": "date-impossible-month-day", "expression": { "date": ["2024-04-31"] }, "data": {}, "expect": { "code": "RULE_TEMPORAL_INPUT_INVALID" } },
+    { "id": "timestamp-impossible-day", "expression": { "date": ["2024-02-30T12:00:00-03:00"] }, "data": {}, "expect": { "code": "RULE_TEMPORAL_INPUT_INVALID" } },
+    { "id": "round-invalid-value", "expression": { "round": ["1"] }, "data": {}, "expect": { "code": "RULE_ARGUMENT_TYPE_INVALID", "operator": "round" } },
+    { "id": "round-invalid-precision", "expression": { "round": [1, "2"] }, "data": {}, "expect": { "code": "RULE_ARGUMENT_TYPE_INVALID", "operator": "round" } },
     { "id": "division-by-zero", "expression": { "/": [1, 0] }, "data": {}, "expect": { "code": "RULE_ARGUMENT_TYPE_INVALID", "operator": "/" } },
     { "id": "substr-invalid-index", "expression": { "substr": ["abc", "x"] }, "data": {}, "expect": { "code": "RULE_ARGUMENT_TYPE_INVALID", "operator": "substr" } },
     { "id": "in-last-invalid-unit", "expression": { "inLast": ["2026-10-31", 2, "fortnights"] }, "data": {}, "options": { "nowUtc": "2026-11-01T04:30:00Z", "userTimeZone": "America/New_York" }, "expect": { "code": "RULE_TEMPORAL_INPUT_INVALID" } }
   ],
   "validationCases": [
+    { "id": "round-two-arguments-valid", "expression": { "round": [1.25, 1] }, "expect": { "valid": true, "codes": [] } },
+    { "id": "round-three-arguments-invalid", "expression": { "round": [1, 2, 3] }, "expect": { "valid": false, "codes": ["RULE_ARITY_INVALID"] } },
     {
       "id": "invalid-arity",
       "expression": {

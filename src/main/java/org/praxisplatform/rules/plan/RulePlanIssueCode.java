@@ -22,6 +22,10 @@ public enum RulePlanIssueCode {
     PLAN_PARAMETERIZATION_INVALID,
     /** A protected guard is not structurally protected. */
     PLAN_PROTECTED_GUARD_INVALID,
+    /** A slot control dependency is missing, disabled, or not a protected product guard. */
+    PLAN_REQUIRED_CONTROL_INVALID,
+    /** An enabled binding omitted a product-owned mandatory control dependency. */
+    PLAN_REQUIRED_CONTROL_MISSING,
     /** A binding outcome or policy is incompatible with its execution stage. */
     PLAN_STAGE_INVALID,
     /** JSON Logic expression is outside the canonical dialect. */

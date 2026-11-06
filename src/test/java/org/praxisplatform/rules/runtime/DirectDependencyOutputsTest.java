@@ -207,7 +207,7 @@ class DirectDependencyOutputsTest {
                 registry(executor("a", context -> RuleExecutorResult.allow()))).compile(historical));
         assertEquals(RulePlanIssueCode.PLAN_COMPATIBILITY_INVALID, exception.getCode());
         assertEquals("1.4", historical.compatibility().engineContractVersion());
-        assertEquals("1.6", RuleRuntimeCompatibility.current().engineContractVersion());
+        assertEquals("1.7", RuleRuntimeCompatibility.current().engineContractVersion());
     }
 
     @Test
@@ -561,7 +561,7 @@ class DirectDependencyOutputsTest {
     private static DecisionSlot slot(String key, DecisionStage stage, DecisionSource source) {
         return new DecisionSlot(key, stage, SlotCardinality.SINGLE,
                 source == DecisionSource.CUSTOMER ? OverridePolicy.REPLACEABLE : OverridePolicy.FORBIDDEN,
-                DecisionAggregationPolicy.SINGLE_RESULT, null);
+                DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
     }
 
     private static RuleSetDefinition definition(List<DecisionSlot> slots, List<DecisionBinding> bindings) {

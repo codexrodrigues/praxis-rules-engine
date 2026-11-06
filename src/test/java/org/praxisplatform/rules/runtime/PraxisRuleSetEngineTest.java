@@ -188,7 +188,7 @@ class PraxisRuleSetEngineTest {
                 DecisionStage.DOMAIN_DECISION,
                 SlotCardinality.MULTIPLE,
                 OverridePolicy.RESTRICT_ONLY,
-                DecisionAggregationPolicy.DENY_OVERRIDES, null);
+                DecisionAggregationPolicy.DENY_OVERRIDES, null, java.util.List.of());
         DecisionBinding augmentation = new DecisionBinding(
                 "customer.augmentation",
                 "extensible",
@@ -294,6 +294,68 @@ class PraxisRuleSetEngineTest {
                 .evaluate(plan, facts, NOW, ZONE);
 
         assertEquals(RuleDecision.ALLOW, result.decision());
+
+        DecisionBinding multiRootCollection = new DecisionBinding(
+                "collection.multiRoot",
+                "collection",
+                DecisionSource.PRODUCT,
+                null,
+                RuleExecutorRef.jsonLogic(JSON.readTree("""
+                        {"and":[
+                          {"===":[{"var":"draft.status"},"EM_EXERCICIO"]},
+                          {"none":[
+                            {"var":"neighborhood.items"},
+                            {"===":[{"var":"status"},"ACTIVE"]}
+                          ]}
+                        ]}
+                        """)),
+                List.of(),
+                10,
+                true,
+                RuleDecision.DENY,
+                "ACTIVE_NEIGHBOR_FOUND",
+                List.of("draft", "neighborhood"), null);
+        RuleSetDefinition multiRootDef = new RuleSetDefinition(
+                ref(),
+                List.of("draft", "neighborhood"),
+                List.of(slot),
+                List.of(multiRootCollection),
+                RuleRuntimeCompatibility.current(),
+                RuleFailPolicy.FAIL_CLOSED);
+        RuleDecisionPlan multiRootPlan = new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
+                .compile(multiRootDef);
+        JsonNode multiRootFacts = JSON.readTree("""
+                {"draft":{"status":"EM_EXERCICIO"},"neighborhood":{"items":[{"status":"INACTIVE"}]}}
+                """);
+        assertEquals(
+                RuleDecision.ALLOW,
+                new PraxisRuleSetEngine(RuleBindingExecutorRegistry.empty())
+                        .evaluate(multiRootPlan, multiRootFacts, NOW, ZONE)
+                        .decision());
+
+        DecisionBinding multiRootUnknown = new DecisionBinding(
+                "collection.unknownRoot",
+                "collection",
+                DecisionSource.PRODUCT,
+                null,
+                RuleExecutorRef.jsonLogic(JSON.readTree("{\"===\":[{\"var\":\"facts.status\"},\"ACTIVE\"]}")),
+                List.of(),
+                10,
+                true,
+                RuleDecision.DENY,
+                "UNKNOWN_ROOT",
+                List.of("draft"), null);
+        RulePlanException multiRootMissing = assertThrows(
+                RulePlanException.class,
+                () -> new PraxisRulePlanCompiler(RuleBindingExecutorRegistry.empty())
+                        .compile(new RuleSetDefinition(
+                                ref(),
+                                List.of("draft", "neighborhood"),
+                                List.of(slot),
+                                List.of(multiRootUnknown),
+                                RuleRuntimeCompatibility.current(),
+                                RuleFailPolicy.FAIL_CLOSED)));
+        assertEquals(RulePlanIssueCode.PLAN_REFERENCE_MISSING, multiRootMissing.getCode());
     }
 
     @Test
@@ -737,7 +799,7 @@ class PraxisRuleSetEngineTest {
                 stage,
                 SlotCardinality.SINGLE,
                 policy,
-                DecisionAggregationPolicy.SINGLE_RESULT, null);
+                DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
     }
 
     private DecisionBinding jsonBinding(

@@ -25,6 +25,7 @@ autoridade.
 | [P2F-ADR-12](p2f-adr-12-observation-redaction-and-retention.md) | observation, redaction e retenção | aceito; host sanitizado e ciclo de vida governado provados no Quickstart |
 | [P2F-ADR-13](p2f-adr-13-deterministic-boundary-hardening.md) | hardening determinístico de fronteiras | aceito para engine contract `1.4`; publicação e smoke downstream pendentes |
 | [P2F-ADR-14](p2f-adr-14-direct-dependency-outputs.md) | outputs diretos Java com política estrutural e orçamento cumulativo | publicado na beta.16, contract `1.5`; smoke neutro aprovado, adoção Config/hosts pendente |
+| [P2F-ADR-15](p2f-adr-15-typed-fact-admission.md) | admissão estrutural de fatos e expressões por operação/provider | candidato local G3; publicação e integração dos hosts pendentes |
 
 ## Gate resultante
 

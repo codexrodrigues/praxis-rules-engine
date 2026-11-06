@@ -212,8 +212,8 @@ class TypedTransformationContractTest {
     }
 
     @Test
-    void publishesTheCurrentRuleSetContractAsEngineBaselineOnePointSix() {
-        assertEquals("1.6", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
+    void publishesTheCurrentRuleSetContractAsEngineBaselineOnePointSeven() {
+        assertEquals("1.7", RuleRuntimeCompatibility.ENGINE_CONTRACT_VERSION);
     }
 
     @Test
@@ -320,7 +320,7 @@ class TypedTransformationContractTest {
     private DecisionSlot slot(String key, DecisionStage stage) {
         return new DecisionSlot(
                 key, stage, SlotCardinality.SINGLE,
-                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null);
+                OverridePolicy.FORBIDDEN, DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
     }
 
     private TransformationDraft draft(String key, String after) {

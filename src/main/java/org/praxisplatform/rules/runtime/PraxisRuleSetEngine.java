@@ -30,6 +30,10 @@ import org.praxisplatform.rules.jsonlogic.internal.PraxisPath;
 import org.praxisplatform.rules.jsonlogic.model.JsonLogicEvaluationOptions;
 import org.praxisplatform.rules.jsonlogic.model.JsonLogicLimits;
 import org.praxisplatform.rules.plan.RuleDecisionPlan;
+import org.praxisplatform.rules.plan.TypedRuleDecisionPlan;
+import org.praxisplatform.rules.facts.RuleFactSchema;
+import org.praxisplatform.rules.facts.RuleFactContractException;
+import org.praxisplatform.rules.facts.TypedRuleEvaluationResult;
 import org.praxisplatform.rules.digest.PraxisCanonicalJson;
 
 /** Stateless evaluator for an already validated and deterministically compiled RuleSet plan. */
@@ -77,6 +81,31 @@ public final class PraxisRuleSetEngine {
             JsonNode facts,
             String nowUtc,
             String userTimeZone) {
+        return evaluate(plan, facts, nowUtc, userTimeZone, null);
+    }
+
+    /**
+     * Evaluates a schema-admitted plan for trusted server invocation coordinates.
+     * @param candidate admitted operation/provider plan
+     * @param hostContractVersion actual host coordinate
+     * @param operationKey actual registered operation
+     * @param providerRef actual registered provider revision
+     * @param facts post-hydration provider snapshot
+     * @param nowUtc frozen UTC instant
+     * @param userTimeZone frozen execution zone
+     * @return deterministic result, including structural provider diagnostics
+     */
+    public TypedRuleEvaluationResult evaluate(TypedRuleDecisionPlan candidate, String hostContractVersion,
+            String operationKey, String providerRef, JsonNode facts, String nowUtc, String userTimeZone) {
+        Objects.requireNonNull(candidate, "candidate");
+        candidate.contract().requireInvocation(hostContractVersion, operationKey, providerRef);
+        return new TypedRuleEvaluationResult(evaluate(candidate.plan(), facts, nowUtc, userTimeZone,
+                candidate.contract().schema()), candidate.admissionDigest(), candidate.contract().digest(),
+                hostContractVersion, operationKey, providerRef);
+    }
+
+    private RuleEvaluationResult evaluate(RuleDecisionPlan plan, JsonNode facts, String nowUtc,
+            String userTimeZone, RuleFactSchema schema) {
         Objects.requireNonNull(plan, "plan is required");
         if (!RuleRuntimeCompatibility.current().equals(plan.definition().compatibility())) {
             return result(plan, RuleDecision.TECHNICAL_ERROR, List.of(),
@@ -122,6 +151,14 @@ public final class PraxisRuleSetEngine {
                     List.of("FACTS_LIMIT_EXCEEDED"), null);
         }
         String factsDigest = PraxisCanonicalJson.sha256(facts);
+        if (schema != null) {
+            try {
+                schema.validate(facts);
+            } catch (RuleFactContractException exception) {
+                return result(plan, RuleDecision.TECHNICAL_ERROR, List.of(),
+                        List.of(exception.code().name()), factsDigest);
+            }
+        }
         if (!validTemporalContext(nowUtc, userTimeZone)) {
             return result(
                     plan,
@@ -153,7 +190,7 @@ public final class PraxisRuleSetEngine {
                 try {
                     bindingResult = evaluateBinding(
                             plan, slot, binding, facts, nowUtc, userTimeZone,
-                            retainedOutputs, dependencyOutputBudget);
+                            retainedOutputs, dependencyOutputBudget, schema);
                 } catch (RuleJsonBudget.InvalidValue exception) {
                     return result(plan, RuleDecision.TECHNICAL_ERROR, List.of(),
                             List.of("DEPENDENCY_OUTPUT_INVALID"), factsDigest);
@@ -300,9 +337,9 @@ public final class PraxisRuleSetEngine {
             String nowUtc,
             String userTimeZone,
             Map<String, JsonNode> retainedOutputs,
-            RuleJsonBudget dependencyOutputBudget) {
+            RuleJsonBudget dependencyOutputBudget, RuleFactSchema schema) {
         for (String requiredPath : binding.requiredFactPaths()) {
-            if (!pathExists(facts, requiredPath)) {
+            if (!pathExists(facts, requiredPath) && (schema == null || !schema.hasNullAncestor(facts, requiredPath))) {
                 return bindingResult(
                         slot,
                         binding,

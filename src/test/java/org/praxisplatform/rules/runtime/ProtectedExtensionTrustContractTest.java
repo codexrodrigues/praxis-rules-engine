@@ -88,7 +88,7 @@ class ProtectedExtensionTrustContractTest {
                 DecisionStage.DOMAIN_DECISION,
                 SlotCardinality.SINGLE,
                 OverridePolicy.FORBIDDEN,
-                DecisionAggregationPolicy.SINGLE_RESULT, null);
+                DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
         DecisionBinding binding = new DecisionBinding(
                 "product.extension",
                 slot.slotKey(),
@@ -171,7 +171,7 @@ class ProtectedExtensionTrustContractTest {
                 DecisionStage.DOMAIN_DECISION,
                 SlotCardinality.SINGLE,
                 OverridePolicy.REPLACEABLE,
-                DecisionAggregationPolicy.SINGLE_RESULT, null);
+                DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
     }
 
     private static DecisionSlot protectedSlot() {
@@ -180,7 +180,7 @@ class ProtectedExtensionTrustContractTest {
                 DecisionStage.PROTECTED_GUARD,
                 SlotCardinality.SINGLE,
                 OverridePolicy.FORBIDDEN,
-                DecisionAggregationPolicy.SINGLE_RESULT, null);
+                DecisionAggregationPolicy.SINGLE_RESULT, null, java.util.List.of());
     }
 
     private static RuleBindingExecutorRegistry registry(RuleExtensionTrust trust) {
