@@ -29,6 +29,13 @@ public record RuleSetRef(
         }
     }
 
+    /** Tests semantic identity independently of the immutable publication version. */
+    public boolean sameIdentity(RuleSetRef other) {
+        return other != null && domainKey.equals(other.domainKey)
+                && boundedContextKey.equals(other.boundedContextKey)
+                && ruleSetKey.equals(other.ruleSetKey) && operationKey.equals(other.operationKey);
+    }
+
     private static String required(String value, String field) {
         Objects.requireNonNull(value, field + " is required");
         if (value.isBlank()) {

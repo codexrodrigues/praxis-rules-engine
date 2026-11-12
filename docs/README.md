@@ -10,6 +10,7 @@ O Praxis Rules Engine e o runtime Java puro e deterministico da plataforma para 
 | Integrar um host de dominio | [Guia de integracao](host-integration-guide.md) |
 | Autorizar/publicar snapshots governados | [Guia de integracao](host-integration-guide.md#snapshots-governados) e a documentacao de `domain-rules` do Config Starter |
 | Consultar APIs, contratos e diagnosticos | [Referencia de contratos](contracts-reference.md) e [Diagnosticos e limites](diagnostics-and-limits.md) |
+| Preparar providers e regras com schema por operação | [ADR-15: admissão estrutural tipada](p2f-adr-15-typed-fact-admission.md), candidato local sem ativação |
 | Criar extensoes Java ou transformacoes | [Extensoes e transformacoes](extensions-and-transformations.md) |
 | Entender a evidencia de testes | [Evidencia de validacao](validation-evidence.md) |
 | Alterar o dialeto JSON Logic | [RFC normativo no Praxis Core](../../praxis-ui-angular/projects/praxis-core/docs/rfc-json-logic-semantics.md), [matriz de operadores](operator-conformance-matrix.md) e corpus compartilhado |

@@ -4,15 +4,14 @@ Core Java 21 puro, embarcavel e deterministico para o dialeto JSON Logic e avali
 
 ## Responsabilidade
 
-O modulo valida e avalia expressoes, compila `RuleSetDefinition` e snapshots
-imutaveis em DAGs deterministicas, resolve bindings JSON Logic ou Java puro,
-consolida decisoes em cinco estados e publica digests e coordenadas de
-compatibilidade. Ele nao possui Spring, persistencia, endpoints, tenant store,
-head mutavel, workflow, execucao de efeitos, HADES, Oracle ou regras Ergon.
+O modulo e o **PDP exclusivo para `decisionKind = BUSINESS`** na **Praxis Decision Platform**: valida e avalia expressoes, compila `RuleSetDefinition` e snapshots imutaveis em DAGs deterministicas, resolve `DecisionBinding` (JSON Logic ou Java puro), consolida decisoes em cinco estados (`ALLOW`, `DENY`, `NOT_APPLICABLE`, `INCONCLUSIVE`, `TECHNICAL_ERROR`) e publica digests e coordenadas de compatibilidade. Ele nao possui Spring, persistencia, endpoints, tenant store, head mutavel, workflow, execucao de efeitos, HADES, Oracle ou regras Ergon — e **nao** avalia politicas de autorizacao, escopo relacional (`DataScopePlan`) ou mascaramento (`FieldMaskingPlan`), que pertencem a trilha `decisionKind = AUTHORIZATION` (`praxis-authz-contracts`, `praxis-authz-enforcement-core`, `praxis-authz-opa`, `praxis-authz-starter`, vinculados por `RuntimeEnforcementBinding`).
 
 O owner normativo do dialeto e hoje `@praxisui/core`; o JAR e o owner do runtime Java. Mudancas de semantica exigem RFC, runtime TypeScript, runtime Java e corpus no mesmo ciclo.
 
 ## Uso
+
+Hosts podem usar o [template governado, captura de fatos e resolução paramétrica](docs/governed-rule-template.md)
+para compor os contratos puros do engine e publicar violações estruturadas pelo metadata starter.
 
 ```java
 PraxisJsonLogicEngine engine = new PraxisJsonLogicEngine();
@@ -42,6 +41,13 @@ CompiledRuleSnapshot prepared = new PraxisRuleSnapshotCompiler(registry)
 
 O `snapshotContentHash` identifica o conteúdo imutável. Concorrência, ETag do
 head, persistência, rollback, cache e troca atômica continuam fora deste JAR.
+
+O [candidato de admissão tipada por operação](docs/p2f-adr-15-typed-fact-admission.md)
+acrescenta `RuleFactSchema`, `RuleFactContract`, `TypedRuleDecisionPlan` e
+`PraxisRuleSnapshotCompiler.compileForOperation`. O host fornece os schemas e
+as coordenadas exatas do provider; o Engine verifica caminhos, tipos e fatos
+antes dos bindings. A API está em desenvolvimento local, sem publicação ou
+ativação implícita em consumidores.
 
 O resultado preserva `DENY`, `NOT_APPLICABLE`, `INCONCLUSIVE` e
 `TECHNICAL_ERROR` sem colapsa-los em boolean, inclui `planDigest`, `factsDigest`,
@@ -119,7 +125,29 @@ coordenada pública verificada e provas próprias de integração; publicação 
 engine não comprova o exemplo financeiro nem a UI.
 
 
-## Parametrização governada — fonte contract 1.6
+## Dependências obrigatórias de controle — fonte contract 1.7
+
+`DecisionSlot.requiredControlDependencies` declara as identidades de bindings
+protegidos do produto que todo binding ativo daquele slot deve ter em `dependsOn`.
+Uma substituição ou parametrização que omite a aresta é rejeitada pelo compiler.
+Os controles devem estar habilitados, ser `PRODUCT` e pertencer a slots
+`PROTECTED_GUARD`/`FORBIDDEN`. O host confere a identidade dos slots e dos controles
+contra seu produto antes de admitir uma composição. O Engine não consulta políticas.
+
+Uma guarda de aplicabilidade retorna `NOT_APPLICABLE` fora de seu âmbito. O DAG
+suprime o predicado dependente, inclusive a exigência de seus fatos. Falta de fonte
+permanece inconclusiva; mensagem de negócio do ponto de extensão é outra decisão.
+`PraxisRulePlanCompiler.compilePreview` admite primeiro a definição completa,
+seleciona o fechamento transitivo e recompila a projeção sem apagar dependências.
+Bindings parametrizados conservam sua representação fonte no snapshot da prévia.
+
+O contrato avança para `1.7`. Snapshots históricos continuam imutáveis; novos
+candidatos exigem recompilação e aprovação no contrato instalado. A coordenada de
+desenvolvimento é `0.1.0-beta.18-SNAPSHOT`, dentro da linha beta, sem publicação.
+Consumo de um JAR candidato isolado prova integração local, e não disponibilidade
+no Maven Central.
+
+## Parametrização governada — introduzida no contract 1.6
 
 `PARAMETERIZE` agora resolve somente valores escalares admitidos por um
 `DecisionSlot.parameterTemplate` de produto com identidade/versão exatas.
@@ -128,7 +156,7 @@ não podem fornecer expressão/executor ou alterar outcomes/facts obrigatórios.
 O [ADR-03](docs/p2f-adr-03-composition-and-overrides.md) documenta schema,
 defaults, sites literais, limites, diagnósticos e a migração beta limpa.
 
-Esta fonte exige engine contract `1.6`, preservando dialeto/corpus JSON Logic.
+Esta fonte exige engine contract `1.7`, preservando dialeto/corpus JSON Logic.
 A coordenada deste incremento é `0.1.0-beta.17`; a disponibilidade no Maven Central
 deve ser confirmada antes da adoção downstream. Snapshots 1.5 e PARAMETERIZE antigo precisam de
 nova publicação governada compatível; Java PARAMETERIZE não é suportado.

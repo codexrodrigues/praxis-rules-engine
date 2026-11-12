@@ -30,6 +30,12 @@
 
 ## Politica para falhas nao-negociais
 
+A [admissão tipada por operação](p2f-adr-15-typed-fact-admission.md), ainda
+candidata, vincula schema fechado, operação, provider e contrato do host ao
+plano executável. `TypedRuleEvaluationResult` acrescenta digests de admissão e
+do contrato de fatos sem mudar o significado de `RuleEvaluationResult`.
+
+
 `RuleFailPolicy` e aplicada pelo host, sem alterar a decisao original:
 
 - `FAIL_CLOSED`: bloqueia operacao protegida.

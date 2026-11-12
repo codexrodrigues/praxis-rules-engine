@@ -19,7 +19,8 @@ import org.praxisplatform.rules.jsonlogic.operators.*;
 /** Thread-safe, stateless and deterministic Praxis JSON Logic runtime. */
 public final class PraxisJsonLogicEngine {
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final Set<String> ROOTS = Set.of("form","row","rowData","computed","meta","source","event","payload","state","context");
+    private static final Set<String> ROOTS = Set.of("form","row","rowData","computed","meta","source","event","payload","state","context","draft","current","neighborhood");
+    private static final Set<String> SCOPED_ITERATORS = Set.of("map","filter","all","some","none","reduce");
     private static final List<JsonLogicOperatorDescriptor> NATIVE = nativeDescriptors();
     private final PraxisJsonLogicOperatorRegistry registry;
 
@@ -131,7 +132,7 @@ public final class PraxisJsonLogicEngine {
         checkResult(value, limits == null ? JsonLogicLimits.DEFAULT : limits);
     }
 
-    private Object evaluateNode(JsonNode n,JsonLogicEvaluationContext c,Budget b,int depth){b.visit(depth);if(n==null||n.isNull())return null;if(n.isNumber())return n.decimalValue();if(n.isTextual()){b.string(n.textValue().length());return n.textValue();}if(n.isBoolean())return n.booleanValue();if(n.isArray()){b.array(n.size());List<Object>r=new ArrayList<>();for(JsonNode x:n)r.add(evaluateNode(x,c,b,depth+1));return r;}if(!n.isObject())return MAPPER.convertValue(n,Object.class);ObjectNode o=(ObjectNode)n;if(o.size()!=1){Map<String,Object>m=new LinkedHashMap<>();o.properties().forEach(x->m.put(x.getKey(),evaluateNode(x.getValue(),c,b,depth+1)));return m;}var en=o.properties().iterator().next();String op=en.getKey();JsonNode raw=en.getValue();b.operation();return switch(op){case"var"->evalVar(raw,c,b,depth);case"and"->evalAnd(raw,c,b,depth);case"or"->evalOr(raw,c,b,depth);case"if"->evalIf(raw,c,b,depth);case"!"->!truthy(argValues(op,raw,c,b,depth,1,1).get(0));case"!!"->truthy(argValues(op,raw,c,b,depth,1,1).get(0));case"==","===","!=","!==",">",">=","<","<="->comparison(op,argValues(op,raw,c,b,depth,2,2));case"+","-","*","/","%","min","max"->arithmetic(op,argValues(op,raw,c,b,depth,op.equals("/")?2:1,op.equals("%")?2:null));case"in"->in(argValues(op,raw,c,b,depth,2,2));case"cat"->argValues(op,raw,c,b,depth,1,null).stream().map(v->v==null||v==MissingValue.INSTANCE?"":String.valueOf(v)).reduce("",String::concat);case"substr"->substr(argValues(op,raw,c,b,depth,2,3));case"merge"->merge(argValues(op,raw,c,b,depth,1,null),b);case"map","filter","reduce","all","some","none"->higher(op,raw,c,b,depth);default->custom(op,raw,c,b,depth);};}
+    private Object evaluateNode(JsonNode n,JsonLogicEvaluationContext c,Budget b,int depth){b.visit(depth);if(n==null||n.isNull())return null;if(n.isNumber())return n.decimalValue();if(n.isTextual()){b.string(n.textValue().length());return n.textValue();}if(n.isBoolean())return n.booleanValue();if(n.isArray()){b.array(n.size());List<Object>r=new ArrayList<>();for(JsonNode x:n)r.add(evaluateNode(x,c,b,depth+1));return r;}if(!n.isObject())return MAPPER.convertValue(n,Object.class);ObjectNode o=(ObjectNode)n;if(o.size()!=1){Map<String,Object>m=new LinkedHashMap<>();o.properties().forEach(x->m.put(x.getKey(),evaluateNode(x.getValue(),c,b,depth+1)));return m;}var en=o.properties().iterator().next();String op=en.getKey();JsonNode raw=en.getValue();b.operation();return switch(op){case"var"->evalVar(raw,c,b,depth);case"and"->evalAnd(raw,c,b,depth);case"or"->evalOr(raw,c,b,depth);case"if"->evalIf(raw,c,b,depth);case"!"->!truthy(argValues(op,raw,c,b,depth,1,1).get(0));case"!!"->truthy(argValues(op,raw,c,b,depth,1,1).get(0));case"==","===","!=","!==",">",">=","<","<="->typedOperation(op,raw,c,b,depth,2,2,false);case"+","-","*","/","%","min","max"->typedOperation(op,raw,c,b,depth,op.equals("/")?2:1,op.equals("%")?2:null,true);case"in"->in(argValues(op,raw,c,b,depth,2,2));case"cat"->argValues(op,raw,c,b,depth,1,null).stream().map(v->v==null||v==MissingValue.INSTANCE?"":String.valueOf(v)).reduce("",String::concat);case"substr"->substr(argValues(op,raw,c,b,depth,2,3));case"merge"->merge(argValues(op,raw,c,b,depth,1,null),b);case"map","filter","reduce","all","some","none"->higher(op,raw,c,b,depth);default->custom(op,raw,c,b,depth);};}
     private Object evalVar(JsonNode raw, JsonLogicEvaluationContext context, Budget budget, int depth) {
         String path;
         JsonNode defaultValue = null;
@@ -159,6 +160,53 @@ public final class PraxisJsonLogicEngine {
     private Object custom(String op,JsonNode r,JsonLogicEvaluationContext c,Budget b,int d){var x=registry.get(op);if(x==null)throw error(JsonLogicIssueCode.RULE_OPERATOR_UNKNOWN,"Unsupported JSON Logic operator: "+op,"$",op);return x.evaluate(argValues(op,r,c,b,d,x.minArgs(),x.maxArgs()),c,this);}
     private List<Object> argValues(String op,JsonNode r,JsonLogicEvaluationContext c,Budget b,int d,int min,Integer max){List<Object>v=new ArrayList<>();for(JsonNode n:args(r,op,min,max))v.add(evaluateNode(n,c,b,d+1));return v;}
     private List<JsonNode> args(JsonNode r,String op,int min,Integer max){List<JsonNode>a=new ArrayList<>();if(r instanceof ArrayNode ar)ar.forEach(a::add);else if(r!=null&&!r.isNull())a.add(r);if(a.size()<min||max!=null&&a.size()>max)throw error(JsonLogicIssueCode.RULE_ARITY_INVALID,"Invalid arity for operator "+op+".","$",op);return a;}
+    private Object typedOperation(String op, JsonNode raw, JsonLogicEvaluationContext context,
+            Budget budget, int depth, int min, Integer max, boolean numeric) {
+        List<Object> values = argValues(op, raw, context, budget, depth, min, max);
+        try {
+            return numeric ? arithmetic(op, values) : comparison(op, values);
+        } catch (PraxisJsonLogicException failure) {
+            if (failure.getCode() != JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID) throw failure;
+            var origins = nullOperandPaths(op, raw, context, values, numeric);
+            if (origins.isEmpty()) throw failure;
+            throw new PraxisJsonLogicException(failure.getCode(), failure.getMessage(), failure.getPath(),
+                    failure.getOperator(), origins);
+        }
+    }
+
+    private List<List<String>> nullOperandPaths(String op, JsonNode raw, JsonLogicEvaluationContext context,
+            List<Object> values, boolean numeric) {
+        if (values.stream().noneMatch(value -> value == null)) return List.of();
+        // Do not hide another invalid operand, including a zero divisor, behind a null operand.
+        for (int index = 0; index < values.size(); index++) {
+            Object value = values.get(index);
+            if (value == null) continue;
+            if (numeric ? !(value instanceof Number) : !(value instanceof Number || value instanceof String)) return List.of();
+            if (value instanceof Number number) {
+                try {
+                    BigDecimal decimal = number(number);
+                    if (numeric && index > 0 && (op.equals("/") || op.equals("%")) && decimal.signum() == 0) return List.of();
+                } catch (PraxisJsonLogicException invalid) { return List.of(); }
+            }
+        }
+        List<JsonNode> arguments = args(raw, op, 1, null);
+        List<List<String>> origins = new ArrayList<>();
+        for (int index = 0; index < values.size(); index++) {
+            if (values.get(index) != null) continue;
+            JsonNode argument = arguments.get(index);
+            if (!argument.isObject() || argument.size() != 1 || !argument.has("var")) return List.of();
+            JsonNode variable = argument.get("var");
+            JsonNode path = variable.isArray() ? variable.get(0) : variable;
+            if (path == null || !path.isTextual()) return List.of();
+            List<String> tokens = PraxisPath.parse(path.textValue());
+            // Collection iterators have no explicit root vocabulary; their local vars must not
+            // be mistaken for a same-named variable in the caller's root context.
+            if (tokens.isEmpty() || !context.availableRoots().contains(tokens.getFirst())) return List.of();
+            origins.add(tokens);
+        }
+        return List.copyOf(origins);
+    }
+
     private Object comparison(String op,List<Object>a){Object l=a.get(0),r=a.get(1);return switch(op){case"=="->equalsLoose(l,r);case"==="->equalsStrict(l,r);case"!="->!equalsLoose(l,r);case"!=="->!equalsStrict(l,r);case">"->compare(l,r)>0;case">="->compare(l,r)>=0;case"<"->compare(l,r)<0;default->compare(l,r)<=0;};}
     private boolean equalsLoose(Object a,Object b){if((a==null||a==MissingValue.INSTANCE)&&(b==null||b==MissingValue.INSTANCE))return true;if(a instanceof Number&&b instanceof String s)return numericString(a,s);if(b instanceof Number&&a instanceof String s)return numericString(b,s);if(a instanceof Boolean x&&b instanceof Number n)return(number(n).compareTo(x?BigDecimal.ONE:BigDecimal.ZERO)==0);if(b instanceof Boolean x&&a instanceof Number n)return(number(n).compareTo(x?BigDecimal.ONE:BigDecimal.ZERO)==0);return equalsStrict(a,b);}
     private boolean numericString(Object n,String s){try{return number((Number)n).compareTo(new BigDecimal(s.trim()))==0;}catch(Exception e){return false;}}
@@ -168,7 +216,7 @@ public final class PraxisJsonLogicEngine {
     private boolean in(List<Object>a){Object n=a.get(0),h=a.get(1);if(h instanceof String s&&n instanceof String x)return s.contains(x);if(h instanceof List<?>l)return l.stream().anyMatch(x->equalsStrict(x,n));throw error(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID,"`in` requires a string or array haystack.","$","in");}
     private String substr(List<Object>a){String s=a.get(0)==null?"":String.valueOf(a.get(0));if(!(a.get(1) instanceof Number startValue)||a.size()==3&&!(a.get(2) instanceof Number))throw error(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID,"Operator substr requires numeric indexes.","$","substr");int start=number(startValue).intValue();int from=start<0?Math.max(s.length()+start,0):Math.min(start,s.length());if(a.size()==2)return s.substring(from);int len=number((Number)a.get(2)).intValue();int to=len<0?Math.max(from,s.length()+len):Math.min(s.length(),from+len);return s.substring(from,to);}
     private List<Object> merge(List<Object>a,Budget b){List<Object>r=new ArrayList<>();for(Object x:a){int added=x instanceof List<?>l?l.size():1;b.array(r.size()+added);if(x instanceof List<?>l)r.addAll(l);else r.add(x);}return r;}
-    private Object higher(String op,JsonNode raw,JsonLogicEvaluationContext c,Budget b,int d){List<JsonNode>a=args(raw,op,2,op.equals("reduce")?3:2);Object src=evaluateNode(a.get(0),c,b,d+1);if(!(src instanceof List<?>list))throw error(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID,"Operator "+op+" requires an array.","$",op);b.array(list.size());if(op.equals("map")){List<Object>r=new ArrayList<>();for(Object x:list)r.add(evaluateNode(a.get(1),child(c,x),b,d+1));return r;}if(op.equals("filter")){List<Object>r=new ArrayList<>();for(Object x:list)if(truthy(evaluateNode(a.get(1),child(c,x),b,d+1)))r.add(x);return r;}if(op.equals("reduce")){Object acc=a.size()==3?evaluateNode(a.get(2),c,b,d+1):MissingValue.INSTANCE;for(Object x:list){Map<String,Object>scope=new LinkedHashMap<>();scope.put("current",x);scope.put("accumulator",acc);acc=evaluateNode(a.get(1),child(c,scope),b,d+1);}return acc;}if(op.equals("all")&&list.isEmpty())return false;boolean any=false;for(Object x:list){boolean hit=truthy(evaluateNode(a.get(1),child(c,x),b,d+1));if(op.equals("all")&&!hit)return false;if((op.equals("some")||op.equals("none"))&&hit){any=true;break;}}return op.equals("all")||op.equals("some")?any||op.equals("all"):!any;}
+    private Object higher(String op,JsonNode raw,JsonLogicEvaluationContext c,Budget b,int d){List<JsonNode>a=args(raw,op,2,op.equals("reduce")?3:2);Object src=evaluateNode(a.get(0),c,b,d+1);if(!(src instanceof List<?>list))throw error(JsonLogicIssueCode.RULE_ARGUMENT_TYPE_INVALID,"Operator "+op+" requires an array.","$",op);b.array(list.size());if(op.equals("map")){List<Object>r=new ArrayList<>();for(Object x:list)r.add(evaluateNode(a.get(1),child(c,x),b,d+1));return r;}if(op.equals("filter")){List<Object>r=new ArrayList<>();for(Object x:list)if(truthy(evaluateNode(a.get(1),child(c,x),b,d+1)))r.add(x);return r;}if(op.equals("reduce")){Object acc=a.size()==3?evaluateNode(a.get(2),c,b,d+1):null;for(Object x:list){Map<String,Object>scope=new LinkedHashMap<>();scope.put("current",x);if(acc!=MissingValue.INSTANCE)scope.put("accumulator",acc);acc=evaluateNode(a.get(1),child(c,scope),b,d+1);}return acc;}if(op.equals("all")&&list.isEmpty())return false;boolean any=false;for(Object x:list){boolean hit=truthy(evaluateNode(a.get(1),child(c,x),b,d+1));if(op.equals("all")&&!hit)return false;if((op.equals("some")||op.equals("none"))&&hit){any=true;break;}}return op.equals("all")||op.equals("some")?any||op.equals("all"):!any;}
     private JsonLogicEvaluationContext child(JsonLogicEvaluationContext c,Object data){return new JsonLogicEvaluationContext(MAPPER.valueToTree(data),List.of(),null,true,c.nowUtc(),c.userTimeZone(),c.limits());}
     private Object resolve(String p,JsonLogicEvaluationContext c){if(p.isEmpty())return MAPPER.convertValue(c.data(),Object.class);List<String>tokens=PraxisPath.parse(p);String first=tokens.get(0);if(!c.allowImplicitRoot()&&c.availableRoots().size()>1&&!c.availableRoots().contains(first))throw error(JsonLogicIssueCode.RULE_CONTEXT_AMBIGUOUS,"Implicit root is not allowed for path \""+p+"\".","$","var");return readPath(c.data(),tokens);}
     private Object readPath(JsonNode data,List<String>tokens){JsonNode cur=data;for(String s:tokens){if(cur==null||cur.isNull())return MissingValue.INSTANCE;if(cur.isArray()){if(!s.matches("\\d+"))return MissingValue.INSTANCE;int i;try{i=Integer.parseInt(s);}catch(NumberFormatException exception){return MissingValue.INSTANCE;}if(i>=cur.size())return MissingValue.INSTANCE;cur=cur.get(i);}else if(cur.isObject()){if(!cur.has(s))return MissingValue.INSTANCE;cur=cur.get(s);}else return MissingValue.INSTANCE;}return cur==null?MissingValue.INSTANCE:cur.isNull()?null:MAPPER.convertValue(cur,Object.class);}
@@ -227,7 +275,7 @@ public final class PraxisJsonLogicEngine {
                         arguments.get(1).textValue(), context.limits());
             }
             for (int index = 0; index < arguments.size(); index++) {
-                validateNode(arguments.get(index), context,
+                validateNode(arguments.get(index), (SCOPED_ITERATORS.contains(operator) && arguments.size() >= 2 && index == 1) ? child(context, MAPPER.createObjectNode()) : context,
                         path + "." + operator + "[" + index + "]",
                         issues, false, budget, depth + 1);
             }

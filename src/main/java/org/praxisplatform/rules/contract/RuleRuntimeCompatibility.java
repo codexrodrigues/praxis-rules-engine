@@ -15,12 +15,12 @@ public record RuleRuntimeCompatibility(
         String jsonLogicCorpusSha256) {
 
     /** Current RuleSet contract version implemented by this engine. */
-    public static final String ENGINE_CONTRACT_VERSION = "1.6";
+    public static final String ENGINE_CONTRACT_VERSION = "1.7";
     /** Current normative JSON Logic dialect version. */
     public static final String JSON_LOGIC_DIALECT_VERSION = "1.0";
     /** SHA-256 of the packaged and Angular-owned normative corpus. */
     public static final String JSON_LOGIC_CORPUS_SHA256 =
-            "E890925C7306A2646CF86443C29ABDDEF0C0645C6228F1DE4A8740E45253D181";
+            "56821F63B4E0CCFD7851D19B10AE9835A6BE6024F8752794C9279D5A650CE6B9";
 
     /** Validates explicit compatibility coordinates. */
     public RuleRuntimeCompatibility {

@@ -79,7 +79,9 @@ public final class PraxisRulePlanCompiler {
         Map<String, DecisionSlot> slots = indexSlots(definition.slots());
         Map<String, DecisionBinding> sourceBindings = indexEnabledBindings(definition.bindings());
         Map<String, DecisionBinding> bindings = materializeParameters(definition, slots, sourceBindings);
+        validateControlDependencies(slots, bindings);
         validateBindings(definition, slots, bindings);
+        validateErrorDescriptors(definition, bindings);
         List<DecisionBinding> ordered = topologicalOrder(slots, bindings);
         RuleDecisionPlan plan = new RuleDecisionPlan(
                 definition,
@@ -89,6 +91,79 @@ public final class PraxisRulePlanCompiler {
                 digest(definition, ordered));
         validateMinimalResultEnvelope(plan);
         return plan;
+    }
+
+    /**
+     * Compiles a non-persistent preview containing selected bindings and their complete control graph.
+     * The complete source definition is admitted before selecting the graph, including parameterized bindings.
+     *
+     * @param definition complete source RuleSet
+     * @param selectedBindingKeys enabled binding identities to preview
+     * @return independently compiled preview with the transitive dependency closure
+     */
+    public RuleDecisionPlan compilePreview(RuleSetDefinition definition, List<String> selectedBindingKeys) {
+        if (selectedBindingKeys == null || selectedBindingKeys.isEmpty()
+                || selectedBindingKeys.size() > MAX_BINDINGS
+                || selectedBindingKeys.stream().anyMatch(key -> key == null || key.isBlank())) {
+            throw new IllegalArgumentException("Preview requires a bounded non-empty list of binding identities");
+        }
+        RuleDecisionPlan complete = compile(definition);
+        Map<String, DecisionBinding> enabled = new LinkedHashMap<>();
+        complete.orderedBindings().forEach(binding -> enabled.put(binding.bindingKey(), binding));
+        var closure = new java.util.LinkedHashSet<String>();
+        var pending = new java.util.ArrayDeque<String>();
+        selectedBindingKeys.stream().map(String::trim).forEach(pending::add);
+        while (!pending.isEmpty()) {
+            String key = pending.removeFirst();
+            DecisionBinding binding = enabled.get(key);
+            if (binding == null) {
+                throw failure(RulePlanIssueCode.PLAN_REFERENCE_MISSING,
+                        "Preview binding is missing or disabled: " + key, key);
+            }
+            if (closure.add(key)) {
+                pending.addAll(binding.dependsOn());
+            }
+        }
+        List<DecisionBinding> bindings = definition.bindings().stream()
+                .filter(binding -> binding.enabled() && closure.contains(binding.bindingKey()))
+                .toList();
+        var selectedSlots = bindings.stream().map(DecisionBinding::slotKey)
+                .collect(java.util.stream.Collectors.toSet());
+        List<DecisionSlot> slots = definition.slots().stream()
+                .filter(slot -> selectedSlots.contains(slot.slotKey())).toList();
+        var descriptors = definition.errorDescriptors().entrySet().stream()
+                .filter(entry -> closure.contains(entry.getKey()))
+                .collect(java.util.stream.Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        var ref = definition.ref();
+        return compile(new RuleSetDefinition(
+                new org.praxisplatform.rules.contract.RuleSetRef(
+                        ref.domainKey(), ref.boundedContextKey(), ref.ruleSetKey(), "preview", ref.version()),
+                definition.availableRoots(), slots, bindings, definition.compatibility(),
+                definition.failPolicy(), descriptors));
+    }
+
+    private void validateErrorDescriptors(RuleSetDefinition definition, Map<String, DecisionBinding> bindings) {
+        if (definition.errorDescriptors().isEmpty()) return;
+        Map<String, Long> activeCodes = bindings.values().stream()
+                .filter(binding -> binding.falseReasonCode() != null)
+                .collect(java.util.stream.Collectors.groupingBy(
+                        DecisionBinding::falseReasonCode, java.util.stream.Collectors.counting()));
+        var reservedCodes = new java.util.HashSet<String>();
+        definition.bindings().stream().filter(binding -> binding.source() != DecisionSource.CUSTOMER)
+                .forEach(binding -> reservedCodes.add(binding.falseReasonCode()));
+        definition.slots().stream().filter(slot -> slot.parameterTemplate() != null)
+                .forEach(slot -> reservedCodes.add(slot.parameterTemplate().falseReasonCode()));
+        definition.errorDescriptors().forEach((key, descriptor) -> {
+            DecisionBinding binding = bindings.get(key);
+            if (binding == null || binding.source() != DecisionSource.CUSTOMER
+                    || binding.falseDecision() != RuleDecision.DENY
+                    || !descriptor.code().equals(binding.falseReasonCode())
+                    || activeCodes.getOrDefault(descriptor.code(), 0L) != 1L
+                    || reservedCodes.contains(descriptor.code())) {
+                throw failure(RulePlanIssueCode.PLAN_OVERRIDE_INVALID,
+                        "Error descriptor must identify one enabled customer denial with a distinct reason code", key);
+            }
+        });
     }
 
     private Map<String, DecisionBinding> materializeParameters(
@@ -164,6 +239,12 @@ public final class PraxisRulePlanCompiler {
             throw failure(RulePlanIssueCode.PLAN_LIMIT_EXCEEDED, "RuleSet exceeds compiler limits", null);
         }
         int edges = 0;
+        for (DecisionSlot slot : definition.slots()) {
+            if (slot.requiredControlDependencies().size() > MAX_DEPENDENCIES_PER_BINDING) {
+                throw failure(RulePlanIssueCode.PLAN_LIMIT_EXCEEDED,
+                        "Slot exceeds mandatory control dependency limit: " + slot.slotKey(), null);
+            }
+        }
         Map<String, Integer> fanOut = new HashMap<>();
         for (DecisionBinding binding : definition.bindings()) {
             if (binding.dependsOn().size() > MAX_DEPENDENCIES_PER_BINDING) {
@@ -235,6 +316,11 @@ public final class PraxisRulePlanCompiler {
                         binding.bindingKey());
             }
             cardinality.merge(slot.slotKey(), 1, Integer::sum);
+            if (!binding.dependsOn().containsAll(slot.requiredControlDependencies())) {
+                throw failure(RulePlanIssueCode.PLAN_REQUIRED_CONTROL_MISSING,
+                        "Binding omits a product-owned control dependency for slot: " + slot.slotKey(),
+                        binding.bindingKey());
+            }
             if (slot.stage() == DecisionStage.EFFECT_INTENT
                     && binding.executor().type() == RuleExecutorType.JSON_LOGIC
                     && binding.falseDecision() != RuleDecision.NOT_APPLICABLE) {
@@ -294,14 +380,30 @@ public final class PraxisRulePlanCompiler {
                         binding.bindingKey());
             }
         }
-        cardinality.forEach((slotKey, count) -> {
-            if (slots.get(slotKey).cardinality() == SlotCardinality.SINGLE && count > 1) {
+        slots.forEach((slotKey, slot) -> {
+            if (slot.cardinality() == SlotCardinality.SINGLE && cardinality.getOrDefault(slotKey, 0) != 1) {
                 throw failure(
                         RulePlanIssueCode.PLAN_CARDINALITY_INVALID,
-                        "Single slot has multiple enabled bindings: " + slotKey,
+                        "Single slot requires exactly one enabled binding: " + slotKey,
                         null);
             }
         });
+    }
+
+    private void validateControlDependencies(
+            Map<String, DecisionSlot> slots, Map<String, DecisionBinding> bindings) {
+        for (DecisionSlot slot : slots.values()) {
+            for (String key : slot.requiredControlDependencies()) {
+                DecisionBinding guard = bindings.get(key);
+                DecisionSlot guardSlot = guard == null ? null : slots.get(guard.slotKey());
+                if (guard == null || guard.source() != DecisionSource.PRODUCT || guardSlot == null
+                        || guardSlot.stage() != DecisionStage.PROTECTED_GUARD
+                        || guardSlot.overridePolicy() != OverridePolicy.FORBIDDEN) {
+                    throw failure(RulePlanIssueCode.PLAN_REQUIRED_CONTROL_INVALID,
+                            "Required control must reference an enabled protected product guard: " + key, key);
+                }
+            }
+        }
     }
 
     private void validateRequiredFacts(RuleSetDefinition definition, DecisionBinding binding) {
@@ -410,8 +512,12 @@ public final class PraxisRulePlanCompiler {
                             true));
             validateExpressionRoots(definition, binding, binding.executor().expression(), false);
         } catch (PraxisJsonLogicException exception) {
+            RulePlanIssueCode code = (exception.getCode() == org.praxisplatform.rules.jsonlogic.model.JsonLogicIssueCode.RULE_ROOT_UNKNOWN
+                    || exception.getCode() == org.praxisplatform.rules.jsonlogic.model.JsonLogicIssueCode.RULE_CONTEXT_AMBIGUOUS)
+                    ? RulePlanIssueCode.PLAN_REFERENCE_MISSING
+                    : RulePlanIssueCode.PLAN_EXPRESSION_INVALID;
             throw failure(
-                    RulePlanIssueCode.PLAN_EXPRESSION_INVALID,
+                    code,
                     "Invalid JSON Logic expression [" + exception.getCode() + "]",
                     binding.bindingKey());
         }
@@ -524,6 +630,9 @@ public final class PraxisRulePlanCompiler {
         canonical.set("sourceBindings", JSON.valueToTree(ordered.stream()
                 .map(binding -> source.get(binding.bindingKey())).toList()));
         canonical.set("compiledBindings", JSON.valueToTree(ordered));
+        if (!definition.errorDescriptors().isEmpty()) {
+            canonical.set("errorDescriptors", JSON.valueToTree(definition.errorDescriptors()));
+        }
         canonical.set("implementations", JSON.valueToTree(implementationRefs(ordered)));
         return PraxisCanonicalJson.sha256(canonical);
     }

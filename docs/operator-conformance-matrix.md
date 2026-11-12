@@ -16,7 +16,8 @@ Todos os operadores abaixo estao no tipo/registry TypeScript e no registry Java.
 | praxis | `contains startsWith endsWith` | 2 | boolean | alvo ausente/null retorna false |
 | praxis | `matches` | 2 | boolean | subset limitado sem grupos, alternancia, backreferences, `*` ou `+`; bounds ate 256 |
 | praxis | `isBlank len` | 1 | boolean/number | vazio, null e ausente explicitos |
-| praxis | `round ceil floor abs` | 1 | number | numero finito |
+| praxis | `round` | 1..2 | number | numero finito; precisao opcional truncada e limitada a 0..10; empate em direcao a +infinito, calculo IEEE 754 como `Math.round` no Core; transbordamento da escala retorna o valor original; zero normalizado |
+| praxis | `ceil floor abs` | 1 | number | numero finito |
 | praxis | `coalesce` | 1+ | unknown | ignora ausente, null e string vazia |
 | praxis contextual | `now` | 0 | number | exige `nowUtc` |
 | praxis | `date toNumber stringify jsonGet hasKey` | 1..2 | variado | parsing/path fechado |

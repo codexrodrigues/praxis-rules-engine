@@ -37,6 +37,8 @@ public record RuleParameterDefinition(
         Objects.requireNonNull(name, "name is required");
         Objects.requireNonNull(type, "type is required");
         defaultValue = defaultValue == null ? null : defaultValue.deepCopy();
+        minimum = minimum == null ? null : minimum.stripTrailingZeros();
+        maximum = maximum == null ? null : maximum.stripTrailingZeros();
         allowedValues = allowedValues == null ? List.of()
                 : allowedValues.stream().<JsonNode>map(value -> Objects.requireNonNull(value).deepCopy()).toList();
         expressionPointers = expressionPointers == null ? List.of() : List.copyOf(expressionPointers);

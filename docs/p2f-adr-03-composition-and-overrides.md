@@ -162,7 +162,7 @@ não devem anunciar suporte inexistente. Os construtores públicos de slot e
 binding ganham seus campos finais, sem overloads que escondam a migração.
 
 Consumidores afetados: Config authoring/publicação/catálogo, factories e
-admissão do host Quickstart, Policy Studio/Angular via projeção Config, docs
+admissão do host Quickstart, Rules Studio/Angular via projeção Config, docs
 públicas e corpus HTTP quando adotarem a nova coordenada. Não há nova aresta de
 dependência entre libs Angular, endpoint ou alteração do corpus JSON Logic.
 Adoção e provas downstream requerem release oficial; o POM candidato

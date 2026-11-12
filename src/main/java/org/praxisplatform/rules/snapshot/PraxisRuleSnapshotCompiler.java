@@ -15,6 +15,7 @@ public final class PraxisRuleSnapshotCompiler {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final PraxisRulePlanCompiler planCompiler;
+    private final RuleBindingExecutorRegistry executorRegistry;
 
     /**
      * Creates a compiler backed by the host's exact Java executor registry.
@@ -22,6 +23,21 @@ public final class PraxisRuleSnapshotCompiler {
      */
     public PraxisRuleSnapshotCompiler(RuleBindingExecutorRegistry executorRegistry) {
         this.planCompiler = new PraxisRulePlanCompiler(executorRegistry);
+        this.executorRegistry = java.util.Objects.requireNonNull(executorRegistry, "executorRegistry");
+    }
+
+    /**
+     * Admits a snapshot against the actual executable operation/provider contract.
+     * @param snapshot immutable published candidate
+     * @param factContract trusted contract registered by the consuming host
+     * @return normalized candidate and schema-bound executable plan
+     */
+    public TypedCompiledRuleSnapshot compileForOperation(PublishedRuleSnapshot snapshot,
+            org.praxisplatform.rules.facts.RuleFactContract factContract) {
+        var compiled = compile(snapshot, factContract.hostContractVersion());
+        var typed = org.praxisplatform.rules.plan.TypedRuleDecisionPlan.compile(
+                compiled.plan().definition(), executorRegistry, factContract);
+        return new TypedCompiledRuleSnapshot(compiled, typed);
     }
 
     /**
@@ -64,7 +80,8 @@ public final class PraxisRuleSnapshotCompiler {
                                 .findFirst().orElseThrow())
                         .toList(),
                 plan.definition().compatibility(),
-                plan.definition().failPolicy());
+                plan.definition().failPolicy(),
+                plan.definition().errorDescriptors());
         PublishedRuleSnapshot normalized = new PublishedRuleSnapshot(
                 snapshot.snapshotContractVersion(),
                 snapshot.snapshotKey(),

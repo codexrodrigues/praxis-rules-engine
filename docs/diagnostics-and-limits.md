@@ -8,6 +8,12 @@
 | Planejamento | `RulePlanIssueCode` | `PLAN_CYCLE`, `PLAN_OVERRIDE_INVALID`, `PLAN_IMPLEMENTATION_UNAVAILABLE`, `PLAN_COMPATIBILITY_INVALID` | Nao ativar a candidata; corrigir RuleSet, catalogo ou coordenadas. |
 | Snapshot | `RuleSnapshotIssueCode` | `SNAPSHOT_CONTRACT_INCOMPATIBLE`, `SNAPSHOT_HOST_INCOMPATIBLE`, `SNAPSHOT_PROVENANCE_INVALID` | Manter last-known-good e corrigir publicacao/host. |
 | Avaliacao | `RuleDecision.TECHNICAL_ERROR` ou `INCONCLUSIVE` | executor ausente, facts invalidos, limite excedido, contexto temporal invalido | Nao converter em `DENY`; aplicar politica de falha no host. |
+| Admissão tipada candidata | `RuleFactContractException` | `SCHEMA_INVALID`, `PATH_UNDECLARED`, `EXPRESSION_TYPE_INVALID`, `EXECUTOR_CONTRACT_INVALID`, `OPERATION_INCOMPATIBLE` | Rejeitar o candidato; não ativar nem escolher outro provider. |
+
+Na avaliação de plano tipado, `FACTS_SCHEMA_INVALID` retorna `TECHNICAL_ERROR`
+antes de qualquer binding. O caso difere de `FACT_REQUIRED_MISSING` no caminho
+defensivo sem schema. Mapas dinâmicos usam `*` no diagnóstico para não expor
+valores usados como chaves. Ver [ADR-15](p2f-adr-15-typed-fact-admission.md).
 
 As APIs de validacao retornam codigo, path e operador quando aplicavel. Consuma os codigos, nao mensagens livres, como contrato de automacao.
 

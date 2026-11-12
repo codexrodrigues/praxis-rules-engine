@@ -97,7 +97,10 @@ deterministico.
 O pacote [ADRs da plataforma de regras](p2f-rule-platform-adrs.md) separa
 contrato de execucao, control plane e responsabilidades do host. A
 implementacao de planner/composicao preserva todos os invariantes acima e
-continua sem Spring, I/O, persistencia, tenant store, cache ou effects.
+continua sem Spring, I/O, persistencia, tenant store ou effects. Compilador e
+evaluator permanecem stateless. O [template governado](governed-rule-template.md)
+é um helper opcional instanciado pelo host com cache local de planos por scope;
+não é store de publicação/ativação nem cache de fatos ou decisões.
 
 ## Outputs diretos no contexto Java (fonte contract 1.5)
 
@@ -111,7 +114,21 @@ oficial verificada em [release readiness](release-readiness.md) e provas nos
 consumidores; a publicação isolada do engine não conclui essa integração.
 
 
-## Parametrização de templates (fonte contract 1.6)
+## Controles de aplicabilidade (fonte contract 1.7)
+
+O slot, pertencente ao produto, pode exigir `requiredControlDependencies`. O
+compiler confere cada aresta de todo binding habilitado após materializar parâmetros
+e antes de ordenar o DAG. Cada destino precisa ser um binding habilitado `PRODUCT`
+em slot `PROTECTED_GUARD`/`FORBIDDEN`; os limites de arestas e ciclos continuam
+aplicáveis. A admissão do host protege a identidade da declaração contra o catálogo
+de produto. A estrutura integra o digest e o snapshot fonte.
+
+Prévias são projeções compiladas pelo mesmo compiler. A origem completa é validada
+antes da seleção; somente os bindings selecionados e seus pré-requisitos transitivos
+permanecem. A projeção mantém slots, dependências e descritores de erro dos bindings
+selecionados. Não há uma segunda semântica de execução para formulários.
+
+## Parametrização de templates (introduzida no contract 1.6)
 
 O [ADR-03](p2f-adr-03-composition-and-overrides.md) fecha a lacuna de
 PARAMETERIZE: o slot publica restrição e molde de produto, o binding source

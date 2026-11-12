@@ -39,7 +39,7 @@ public final class DefaultPraxisJsonLogicOperators {
             return SafeRegex.compile(p,c.limits()).matcher(s).find(); }));
         out.add(op("isBlank",1,1,"boolean","pure",(a,c,e)-> {Object v=a.get(0); return nullish(v)||(v instanceof String s&&s.isBlank())||(v instanceof List<?> l&&l.isEmpty());}));
         out.add(op("len",1,1,"number","pure",(a,c,e)-> {Object v=a.get(0); if(nullish(v))return null; if(v instanceof String s)return s.length(); if(v instanceof List<?> l)return l.size(); if(v instanceof Map<?,?>m)return m.size(); throw type("len","requires a string, array, or object");}));
-        out.add(numberUnary("round", n->n.setScale(0,java.math.RoundingMode.HALF_UP)));
+        out.add(op("round",1,2,"number","pure",(a,c,e)->round(a)));
         out.add(numberUnary("ceil", n->n.setScale(0,java.math.RoundingMode.CEILING)));
         out.add(numberUnary("floor", n->n.setScale(0,java.math.RoundingMode.FLOOR)));
         out.add(numberUnary("abs", BigDecimal::abs));
@@ -58,6 +58,29 @@ public final class DefaultPraxisJsonLogicOperators {
     }
 
     private static PraxisJsonLogicOperator numberUnary(String name, java.util.function.UnaryOperator<BigDecimal> fn){return op(name,1,1,"number","pure",(a,c,e)->fn.apply(decimal(a.get(0),name)));}
+    private static double round(List<Object> args) {
+        double value = finiteDouble(args.get(0), "round");
+        int precision = 0;
+        if (args.size() > 1 && nullish(args.get(1)) == false) {
+            double requested = finiteDouble(args.get(1), "round");
+            precision = (int) Math.max(0, Math.min(10, requested));
+        }
+        if (precision == 0) return jsRound(value);
+        double factor = Math.pow(10, precision);
+        double scaled = (value + Math.ulp(1.0)) * factor;
+        return Double.isFinite(scaled) ? jsRound(scaled) / factor : value;
+    }
+    // Math.round in Java returns a long; ECMAScript returns a double and ties toward +infinity.
+    private static double jsRound(double value) {
+        if (!Double.isFinite(value) || value == 0) return value;
+        double floor = Math.floor(value);
+        return value - floor < 0.5 ? floor : floor + 1;
+    }
+    private static double finiteDouble(Object value, String op) {
+        double result = decimal(value, op).doubleValue();
+        if (!Double.isFinite(result)) throw type(op, "requires finite numeric arguments");
+        return result;
+    }
     private static PraxisJsonLogicOperator since(String name,double days){return op(name,1,1,"number","contextual",(a,c,e)->(long)Math.floor(ChronoUnit.MILLIS.between(temporal(a.get(0),c),requiredNow(c))/(86400000d*days)));}
     private static boolean stringOrFalse(List<Object>a,String op,java.util.function.BiPredicate<String,String> fn){if(nullish(a.get(0)))return false;if(a.get(0)instanceof String x&&a.get(1)instanceof String y)return fn.test(x,y);throw type(op,"requires string arguments");}
     private static boolean nullish(Object v){return v==null||v==MissingValue.INSTANCE;}
