@@ -79,5 +79,5 @@ lote retorna resultado por item; falha de um item não pode ser apresentada
 como sucesso ou rollback integral sem semântica explícita do command.
 
 Diagnostics, observations e logs aplicam allowlist/redaction. Facts sensíveis,
-tokens, usuário, empresa, SQL, HADES e stack trace nunca atravessam o resultado
+tokens, usuário, empresa, SQL, metadados internos de banco e stack trace nunca atravessam o resultado
 público por default.

@@ -1,54 +1,59 @@
-# Releasing — Praxis Rules Engine
+# Guia de Release — Praxis Rules Engine
 
-## Prerequisites
+## Pré-requisitos
 
-- GitHub repository secrets: `CENTRAL_TOKEN_USER`, `CENTRAL_TOKEN_PASS`,
-  `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE`, and optionally `GPG_KEY_ID`.
-- `GPG_PRIVATE_KEY` may be an ASCII-armored private-key block or a base64
-  encoding of the exported key. The workflow removes a UTF-8 BOM, CRLF line
-  endings, and any accidental text before the armor header before importing it.
-- An active `io.github.codexrodrigues` namespace in Sonatype Central.
-- A release version that is not already published and follows SemVer.
-- A successful consumer smoke test against the published version before any
-  subsequent host release.
+- Segredos configurados no repositório GitHub: `CENTRAL_TOKEN_USER`, `CENTRAL_TOKEN_PASS`,
+  `GPG_PRIVATE_KEY`, `GPG_PASSPHRASE` e, opcionalmente, `GPG_KEY_ID`.
+- `GPG_PRIVATE_KEY` pode ser um bloco de chave privada em ASCII-armor ou codificado
+  em base64. O workflow remove BOM UTF-8, quebras de linha CRLF e qualquer texto
+  acidental antes do cabeçalho ASCII-armor antes da importação.
+- Namespace `io.github.codexrodrigues` ativo no Sonatype Central.
+- Versão de release inédita e aderente ao padrão SemVer.
+- Smoke test de consumidor bem-sucedido contra a versão publicada antes de
+  qualquer release subsequente em hosts ou starters downstream.
 
-## Release flow
+## Fluxo de release
 
-1. Merge the intended commit into `main`; the working tree must be clean.
-2. Run the focused local gate:
+1. Faça o merge do commit desejado para `main`; a árvore de trabalho deve estar limpa.
+2. Execute o gate local focado:
 
    ```powershell
    $env:JAVA_HOME='<JDK-21>'
    mvn clean verify
    ```
 
-   For a release candidate, require both Linux and Windows CI jobs to pass.
-   The JSON Logic corpus is a byte-addressed contract, so a green build on only
-   one checkout policy is not sufficient release evidence.
+   Para um release candidate, exija aprovação tanto do job de CI em Linux quanto
+   do job em Windows. O corpus JSON Logic é um contrato endereçado por bytes,
+   portanto um build verde em apenas uma política de checkout não constitui
+   evidência suficiente de release.
 
-3. Use **Release Praxis Rules Engine** with `workflow_dispatch`, executing it
-   on `main`, with `create_tag=true` and either an explicit `version` or a
-   `bump`/`preid` pair. The workflow creates the annotated `v<semver>` tag.
-4. The tag push triggers signing, Central upload, and a Maven Central
-   availability probe. Do not run `mvn deploy` locally and do not create tags
-   manually as a bypass.
-5. Only after the availability probe succeeds may `praxis-metadata-starter` or
-   `praxis-api-quickstart` consume the public coordinate.
+3. Execute **Release Praxis Rules Engine** via `workflow_dispatch` sobre `main`,
+   com `create_tag=true` e `version` explícita ou um par `bump`/`preid`. O
+   workflow criará a tag anotada `v<semver>`.
+4. O push da tag dispara assinatura, upload para o Maven Central e sondagem de
+   disponibilidade pública. Não execute `mvn deploy` localmente nem crie tags
+   manualmente como atalho.
+5. Somente após a sondagem de disponibilidade concluir com sucesso é que módulos
+   como `praxis-metadata-starter` ou `praxis-api-quickstart` podem consumir a
+   nova coordenada pública.
 
-## Current public line
+## Linha pública atual
 
-The current public coordinate and its publication evidence are recorded in
-[release readiness](docs/release-readiness.md). The active release line remains
-`0.1.0-beta.*`; the source implements engine contract `1.6`. The runtime contract
-is an exact compatibility boundary: 1.4 compositions require governed migration
-and new approval before execution with 1.6. Publication does not establish host
-adoption. See the [contract reference](docs/contracts-reference.md#compatibilidade-publicada).
+A coordenada pública vigente e suas evidências de publicação estão registradas em
+[prontidão para release](docs/release-readiness.md). A linha ativa de release
+permanece em `0.1.0-beta.*`; o código-fonte implementa o contrato de engine
+`1.6`. O contrato de runtime é uma fronteira exata de compatibilidade:
+composições `1.4` exigem migração governada e nova aprovação antes da execução
+com `1.6`. A publicação no Central não implica adoção automática nos hosts. Veja
+a [referência de contratos](docs/contracts-reference.md#compatibilidade-publicada).
 
-Beta.14 advertised a corpus hash different from its packaged bytes. Beta.15
-corrected that drift but failed a Windows checkout audit because LF/CRLF was not
-governed. A successor must pass Linux and Windows CI and a Central-only smoke
-that checks both the advertised corpus hash and packaged bytes.
+Historicamente, a versão `beta.14` anunciou um hash de corpus divergente de seus
+bytes empacotados; a `beta.15` corrigiu esse desvio, mas falhou na auditoria de
+checkout Windows por falta de governança de LF/CRLF. Todo release sucessor deve
+passar nos checks de Linux e Windows no CI e em smoke test contra o Maven
+Central verificando tanto o hash anunciado do corpus quanto os bytes
+efetivamente empacotados.
 
-Compatible work remains on the active `0.1.0-beta.*` line. A new major requires
-an explicitly governed breaking-change plan, consumer impact map, migration
-guidance and downstream validation.
+Evoluções compatíveis continuam na linha ativa `0.1.0-beta.*`. Uma nova versão
+major exige plano explícito de breaking change governado, mapa de impacto nos
+consumidores, guia de migração e validação downstream.

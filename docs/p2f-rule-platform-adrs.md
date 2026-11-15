@@ -6,7 +6,7 @@
 
 Este índice registra as decisões de plataforma que o laboratório do
 `praxis-api-quickstart` deve consumir. O Quickstart não é owner destes
-contratos, e nenhum ADR autoriza execução de regras Ergon ou promoção de
+contratos, e nenhum ADR autoriza execução de regras de aplicações consumidoras ou promoção de
 autoridade.
 
 | ADR | Decisão | Estado |
@@ -45,8 +45,8 @@ inbox/audit, dashboards/alertas no ambiente-alvo e autoridade continuam gates de
 Para ADR-11, o Quickstart também provou auditoria append-only redigida na mesma
 unidade transacional da materialização, preservando os digests canônicos do
 engine sem persistir os valores transformados. Esse gate específico está
-concluído no laboratório; não amplia a autoridade do engine nem libera regras
-Ergon.
+concluído no laboratório; não amplia a autoridade do engine nem libera regras de
+hosts consumidores.
 
 O ADR-12 preserva o resultado determinístico como única superfície do engine e
 coloca observação, acesso, legal hold e retenção no host. O Quickstart prova a
@@ -58,7 +58,7 @@ As fixtures e o checker focal vivem no `praxis-api-quickstart` em
 planner e evaluator do core de QL-02 foram publicados e consumidos pelo
 Quickstart. QL-03 adicionou o envelope de snapshot sem mover persistência, ETag
 ou lifecycle para o engine. QL-05–QL-08 preservaram essa ownership boundary;
-nenhum ADR autoriza regra Ergon, preflight, autoridade ou desligamento legado.
+nenhum ADR autoriza regra de aplicação consumidora, preflight, autoridade ou desligamento legado.
 
 O ADR-05 fecha o default-deny de extensões Java de cliente: protected guards
 continuam `FORBIDDEN`, e um registry só admite `CUSTOMER + JAVA` quando o

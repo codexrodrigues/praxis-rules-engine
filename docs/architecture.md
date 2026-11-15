@@ -13,7 +13,7 @@
   modulo conforme [P2F-ADR-01](p2f-adr-01-runtime-contract-ownership.md) e ja
   integram a linha beta publica;
 - envelope governado de snapshot, approval, ETag, head ativo e rollback
-  permanecem no `praxis-config-starter`; contratos Ergon nao pertencem a este
+  permanecem no `praxis-config-starter`; contratos específicos de aplicações consumidoras nao pertencem a este
   modulo.
 
 ## Pipeline

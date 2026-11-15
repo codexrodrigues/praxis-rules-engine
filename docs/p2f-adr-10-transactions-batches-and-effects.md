@@ -164,7 +164,7 @@ Ainda exigem implementação e prova antes de Fase 9 ou autoridade:
 - adapter do sistema corporativo-alvo e prova de seu efeito idempotente real;
 - retenção e governança do inbox/audit na infraestrutura-alvo;
 - scheduler/worker governado, dashboards, alertas e replay de dead-letter auditado no ambiente-alvo;
-- harness DB-backed real e semântica transacional do host Ergon.
+- harness DB-backed real e semântica transacional do host corporativo consumidor.
 
 O recovery drill multi-processo foi concluído em 2026-07-15 no Quickstart: duas branches schema-only
 efêmeras de projetos PostgreSQL Neon distintos, consumidor em JVM própria, HTTPS, timeout depois do

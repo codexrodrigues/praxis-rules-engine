@@ -1,12 +1,23 @@
 # Praxis Rules Engine
 
-Core Java 21 puro, embarcavel e deterministico para o dialeto JSON Logic e avaliacao de `RuleSet` da **Praxis Platform** — garantindo que regras e politicas descritas uma vez sejam avaliadas de forma deterministica (5 estados) tanto no backend quanto em interfaces tradicionais, interfaces generativas, agentes de IA e integracoes.
+Core Java 21 puro, embarcável e determinístico para o dialeto JSON Logic e avaliação de `RuleSet` da [**Praxis Platform**](https://praxisui.dev/) — garantindo que regras de negócio descritas uma única vez sejam avaliadas de forma idêntica (5 estados determinísticos) em **interfaces tradicionais, interfaces generativas, agentes de IA e integrações backend**.
 
-## Responsabilidade
+## Responsabilidade e Separação Ortogonal (`BUSINESS` vs. `AUTHORIZATION`)
 
-O modulo e o **PDP exclusivo para `decisionKind = BUSINESS`** na **Praxis Decision Platform**: valida e avalia expressoes, compila `RuleSetDefinition` e snapshots imutaveis em DAGs deterministicas, resolve `DecisionBinding` (JSON Logic ou Java puro), consolida decisoes em cinco estados (`ALLOW`, `DENY`, `NOT_APPLICABLE`, `INCONCLUSIVE`, `TECHNICAL_ERROR`) e publica digests e coordenadas de compatibilidade. Ele nao possui Spring, persistencia, endpoints, tenant store, head mutavel, workflow, execucao de efeitos, HADES, Oracle ou regras Ergon — e **nao** avalia politicas de autorizacao, escopo relacional (`DataScopePlan`) ou mascaramento (`FieldMaskingPlan`), que pertencem a trilha `decisionKind = AUTHORIZATION` (`praxis-authz-contracts`, `praxis-authz-enforcement-core`, `praxis-authz-opa`, `praxis-authz-starter`, vinculados por `RuntimeEnforcementBinding`).
+Este módulo é o **PDP (Policy Decision Point) exclusivo para `decisionKind = BUSINESS`** na **Praxis Decision Platform**: valida e avalia expressões, compila `RuleSetDefinition` e snapshots imutáveis em DAGs determinísticas, resolve `DecisionBinding` (JSON Logic ou Java puro), consolida decisões em cinco estados (`ALLOW`, `DENY`, `NOT_APPLICABLE`, `INCONCLUSIVE`, `TECHNICAL_ERROR`) e publica digests e coordenadas de compatibilidade. Ele **não** possui Spring, persistência, endpoints, estado mutável, workflow ou regras acopladas a sistemas legados, bancos de dados ou produtos específicos.
 
-O owner normativo do dialeto e hoje `@praxisui/core`; o JAR e o owner do runtime Java. Mudancas de semantica exigem RFC, runtime TypeScript, runtime Java e corpus no mesmo ciclo.
+Em grandes sistemas corporativos, misturar regras de negócio com segurança gera vazamentos por mensagem de erro (*side-channel*) e código impossível de auditar. Por isso, a arquitetura Praxis mantém dois planos rigorosamente ortogonais e integrados:
+
+| Dimensão | `decisionKind = BUSINESS` (**Este Projeto**) | `decisionKind = AUTHORIZATION` (**Família Authz `0.1.0-beta.1`**) |
+| :--- | :--- | :--- |
+| **Módulos Canônicos** | **`praxis-rules-engine`** | [`praxis-authz-contracts`](https://github.com/codexrodrigues/praxis-authz-contracts) → [`praxis-authz-enforcement-core`](https://github.com/codexrodrigues/praxis-authz-enforcement-core) → [`praxis-authz-opa`](https://github.com/codexrodrigues/praxis-authz-opa) → [`praxis-authz-starter`](https://github.com/codexrodrigues/praxis-authz-starter) |
+| **Quando Executa no PEP** | Exatamente no **Passo 12 (`STEP_12`)**, já após o bloqueio pré-hidratação (`STEP_11`) e **sempre sobre dados reais não mascarados (`P40`)** | **Passos 1–11** (autenticação, anti-spoofing, `FIELD_USE`, `DATA_SCOPE` Kleene 3VL em SQL, `ACCESS` e `FIELD_WRITE`) e **Passos 13–15** (outbox e mascaramento desconectado `MASK`) |
+| **Tecnologia / Vínculo** | JSON Logic determinístico / DAGs Java (`PublishedRuleSnapshot` + `DecisionBinding`) | OPA `import rego.v1` + `DataScopePlan` Kleene 3VL (`RuntimeEnforcementBinding`) |
+| **Governança e Autoria (PAP / Studio)** | [`praxis-config-starter`](https://github.com/codexrodrigues/praxis-config-starter) + **Lente de Regras de Negócio** no [`praxis-policy-studio`](https://github.com/codexrodrigues/praxis-policy-studio) | [`praxis-config-starter`](https://github.com/codexrodrigues/praxis-config-starter) + **Lente de Acesso e Proteção de Dados** no [`praxis-policy-studio`](https://github.com/codexrodrigues/praxis-policy-studio) |
+
+**Vantagem frente ao mercado e ganho em tokens de IA:** Motoristas de regras convencionais (*BRMS* pesados) prendem regras em bancos proprietários ou DSLs opacas que exigem dezenas de integrações para funcionar no browser e no servidor. Aqui, o mesmo dialeto canônico (normatizado em `@praxisui/core` no [`praxis-ui-angular`](https://github.com/codexrodrigues/praxis-ui-angular) e executado aqui em Java 21 puro) opera no frontend e no backend, integrado ainda aos recursos semânticos de [`praxis-metadata-starter`](https://github.com/codexrodrigues/praxis-metadata-starter) e provado no [`praxis-api-quickstart`](https://github.com/codexrodrigues/praxis-api-quickstart). Para agentes de IA e LLMs, raciocinar sobre `RuleSet` declarativos em JSON Logic com 5 estados fechados reduz drasticamente os tokens de contexto necessários para auditar ou propor novas regras em comparação com percorrer árvores de `if/else` espalhadas em múltiplos `@Service`s.
+
+O owner normativo do dialeto é hoje `@praxisui/core`; o JAR é o owner do runtime Java. Mudanças de semântica exigem RFC, runtime TypeScript, runtime Java e corpus no mesmo ciclo.
 
 ## Uso
 

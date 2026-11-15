@@ -13,7 +13,7 @@ domainKey / boundedContextKey / ruleSetKey / operationKey / version
 ```
 
 Dentro do RuleSet, `slotKey` e `bindingKey` são estáveis e únicos. Chaves usam
-vocabulário de domínio; não incluem path HTTP, classe, tabela, ordem HADES,
+vocabulário de domínio; não incluem path HTTP, classe, tabela, ordem de execução legada,
 `ROWID`, empresa, usuário ou sessão. `version` é inteiro positivo e imutável.
 
 `tenant` e `environment` particionam publicação e seleção, mas não alteram a

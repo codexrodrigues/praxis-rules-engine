@@ -102,7 +102,7 @@ O Quickstart QL-06 publica uma observação HTTP sanitizada e métricas bounded,
 sem persistir facts ou alterar os quatro ledgers operacionais. QL-08 mantém as
 auditorias de replay e transformação insert-only e adiciona retenção/legal hold
 governados no PostgreSQL. Essa prova é neutra e não autoriza shadow, preflight,
-promoção ou desligamento de regra Ergon.
+promoção ou desligamento de regra de aplicação consumidora.
 
 ## Compatibilidade e release
 

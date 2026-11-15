@@ -80,7 +80,7 @@ governada, sem mover I/O para o engine.
 - rollback troca atomicamente para snapshot e registry previamente aprovados;
 - active head, rollout, revogação, armazenamento de bundles, SBOM, assinatura e
   auditoria operacional permanecem no control plane, pipeline e host;
-- nenhuma evidência ADR-05 autoriza regra Ergon, preflight ou promoção de
+- nenhuma evidência ADR-05 autoriza regra de aplicação consumidora, preflight ou promoção de
   autoridade.
 
 ## Evidência mínima

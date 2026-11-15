@@ -8,9 +8,9 @@ O schema aceita o perfil G1 de objetos fechados ou mapas tipados, arrays homogê
 
 A admissão tipada produz um plano vinculado ao schema e à operação. A avaliação valida uma cópia limitada dos fatos antes de chamar qualquer binding. A ausência estrutural gera diagnóstico técnico. Um conceito explicitamente null é distinguido de uma propriedade ausente. A expressão continua responsável pelo predicado de negócio.
 
-O desenvolvimento por família usa candidatos isolados e testes com a coordenada candidata. A troca do contrato ativo do Ergon exige a migração do conjunto completo prevista no blueprint. A integração pública e o corte operacional seguem seus gates próprios.
+O desenvolvimento por família usa candidatos isolados e testes com a coordenada candidata. A troca do contrato ativo do host consumidor exige a migração do conjunto completo prevista no blueprint. A integração pública e o corte operacional seguem seus gates próprios.
 
-Impacto nos consumidores diretos envolve o schema publicado pelo Config, os providers e o registry do Ergon, a admissão de snapshots e os testes de Quickstart. A análise tipada acrescenta uma fronteira de admissão ao plano. A prova temporal também identificou a correção do corpus descrita a seguir.
+Impacto nos consumidores diretos envolve o schema publicado pelo Config, os providers e o registry do host consumidor, a admissão de snapshots e os testes de Quickstart. A análise tipada acrescenta uma fronteira de admissão ao plano. A prova temporal também identificou a correção do corpus descrita a seguir.
 
 Atualização da prova temporal: o replay da AST de Funções encontrou normalização
 indevida de datas inexistentes no TypeScript. O parser canônico foi corrigido e
