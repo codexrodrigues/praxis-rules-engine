@@ -23,11 +23,11 @@ class EffectiveDatedIntervalCalculatorTest {
         // Out-of-window future & past events are clipped/ignored safely.
         List<IntervalEvent> events = List.of(
                 new IntervalEvent("AF-1", LocalDate.of(2025, 5, 1), LocalDate.of(2025, 5, 10),
-                        InterruptionEffect.SUSPEND, "ERG-LIC-PARTICULAR", "Lei 8.112/90, art. 91"),
+                        InterruptionEffect.SUSPEND, "WF-LIC-PARTICULAR", "Lei 8.112/90, art. 91"),
                 new IntervalEvent("AF-2", LocalDate.of(2025, 5, 5), LocalDate.of(2025, 5, 15),
-                        InterruptionEffect.SUSPEND, "ERG-FALTA-INJUST", "Lei 8.112/90, art. 44"),
+                        InterruptionEffect.SUSPEND, "WF-FALTA-INJUST", "Lei 8.112/90, art. 44"),
                 new IntervalEvent("AF-3", LocalDate.of(2025, 5, 16), LocalDate.of(2025, 5, 20),
-                        InterruptionEffect.SUSPEND, "ERG-SUSP-DISC", "Lei 8.112/90, art. 130"),
+                        InterruptionEffect.SUSPEND, "WF-SUSP-DISC", "Lei 8.112/90, art. 130"),
                 new IntervalEvent("AF-PAST", LocalDate.of(2024, 12, 20), LocalDate.of(2024, 12, 31),
                         InterruptionEffect.SUSPEND, "PAST", null),
                 new IntervalEvent("AF-FUT", LocalDate.of(2026, 1, 10), LocalDate.of(2026, 1, 15),
@@ -65,7 +65,7 @@ class EffectiveDatedIntervalCalculatorTest {
                         InterruptionEffect.SUSPEND, "OLD-SUSP", null),
                 // Interruption ending 2023-12-31 => restarts cycle on 2024-01-01 (2024 is leap year: 366 days!)
                 new IntervalEvent("INT-1", LocalDate.of(2023, 12, 15), LocalDate.of(2023, 12, 31),
-                        InterruptionEffect.INTERRUPT_AND_RESTART, "ERG-INTERRUPCAO-QUINQUENIO", "Estatuto Estadual, art. 118"),
+                        InterruptionEffect.INTERRUPT_AND_RESTART, "WF-INTERRUPCAO-QUINQUENIO", "Estatuto Estadual, art. 118"),
                 // Suspension inside new cycle before completion: 2024-05-01..2024-05-10 (10 days)
                 new IntervalEvent("SUSP-MID", LocalDate.of(2024, 5, 1), LocalDate.of(2024, 5, 10),
                         InterruptionEffect.SUSPEND, "SUSP-MID", "Art. 91"),

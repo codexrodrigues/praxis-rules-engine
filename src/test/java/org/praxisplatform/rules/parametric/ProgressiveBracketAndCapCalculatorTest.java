@@ -109,7 +109,7 @@ class ProgressiveBracketAndCapCalculatorTest {
                         new BigDecimal("7786.02"),
                         BracketMode.MARGINAL_SLICES,
                         RPPS_EC103_BRACKETS,
-                        "ERG-RPC-TETO-RGPS",
+                        "WF-RPC-TETO-RGPS",
                         "CF/88, art. 40, §§ 14 a 16");
 
         assertTrue(rpcResult.ceilingCapApplied());
@@ -137,7 +137,7 @@ class ProgressiveBracketAndCapCalculatorTest {
                         null,
                         BracketMode.MARGINAL_SLICES,
                         RPPS_EC103_BRACKETS,
-                        "ERG-RPPS-PROGRESSIVO",
+                        "WF-RPPS-PROGRESSIVO",
                         "EC 103/2019, art. 11");
 
         assertFalse(integralResult.ceilingCapApplied());
@@ -162,7 +162,7 @@ class ProgressiveBracketAndCapCalculatorTest {
                         null,
                         BracketMode.TABLE_RATE_MINUS_DEDUCTION,
                         IRRF_TABLE_BRACKETS,
-                        "ERG-IRRF-MENSAL",
+                        "WF-IRRF-MENSAL",
                         "RIR/2018; Lei 9.250/1995");
 
         assertEquals(new BigDecimal("1653.35"), irrf.totalBaseDeductions());
@@ -180,7 +180,7 @@ class ProgressiveBracketAndCapCalculatorTest {
                         null,
                         BracketMode.TABLE_RATE_MINUS_DEDUCTION,
                         IRRF_TABLE_BRACKETS,
-                        "ERG-IRRF-MENSAL",
+                        "WF-IRRF-MENSAL",
                         "Lei 11.482/2007");
         assertEquals(new BigDecimal("0.00"), exempt.calculatedAmount());
     }
@@ -195,7 +195,7 @@ class ProgressiveBracketAndCapCalculatorTest {
                         new BigDecimal("46500.00"),
                         new BigDecimal("3200.00"),
                         new BigDecimal("44008.52"),
-                        "ERG-ABATE-TETO-CF88-ART37-XI",
+                        "WF-ABATE-TETO-CF88-ART37-XI",
                         "CF/88, art. 37, XI e § 11; Temas 377 e 384 STF");
 
         assertTrue(cap.capTriggered());
@@ -219,7 +219,7 @@ class ProgressiveBracketAndCapCalculatorTest {
                         new BigDecimal("3800.00"),
                         new BigDecimal("1500.00"),
                         new BigDecimal("35.00"),
-                        "ERG-MARGEM-CONSIGNAVEL-EXCEDIDA",
+                        "WF-MARGEM-CONSIGNAVEL-EXCEDIDA",
                         "Lei 14.509/2022");
 
         assertEquals(new BigDecimal("7300.00"), margin.totalDeductions());
@@ -236,7 +236,7 @@ class ProgressiveBracketAndCapCalculatorTest {
                         new BigDecimal("9000.00"),
                         new BigDecimal("18"),
                         new BigDecimal("30"),
-                        "ERG-PRO-RATA-30D",
+                        "WF-PRO-RATA-30D",
                         "Lei 8.112/1990, art. 40");
         assertEquals(new BigDecimal("5400.00"), proRata.proportionalAmount());
         assertEquals(new BigDecimal("0.600000"), proRata.proportionalFactor());

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.*;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -23,6 +24,25 @@ import org.praxisplatform.rules.jsonlogic.model.JsonLogicLimits;
  * domain inference or rule comparison is performed. Each returned tree is detached.
  */
 public final class PraxisFactTreeBuilder {
+    /**
+     * Controls how civil {@link LocalDate} values are serialized into JSON fact nodes.
+     *
+     * <p>{@link LocalDateTime}, {@link OffsetDateTime}, {@link ZonedDateTime}, and other temporal
+     * types retain their canonical ISO-8601 representations in all modes.</p>
+     */
+    public enum DateSerializationMode {
+        /** Serializes {@link LocalDate} as ISO-8601 string (for example {@code "2026-11-02"}). */
+        ISO_8601,
+        /** Serializes {@link LocalDate} as integer epoch day ({@link LocalDate#toEpochDay()}). */
+        EPOCH_DAY,
+        /**
+         * Serializes {@link LocalDate} as ISO-8601 string at {@code <prop>} and emits a numeric
+         * {@code <prop>EpochDay} sibling inside object nodes (including explicit {@code null} for
+         * null {@link LocalDate} bean/record properties so closed schemas stay shape-consistent).
+         */
+        ISO_AND_EPOCH_DAY
+    }
+
     /** Canonical ontological root for the candidate mutation state (NEW). */
     public static final String ROOT_DRAFT = "draft";
     /** Canonical ontological root for the persisted pre-mutation state (OLD). */
@@ -39,26 +59,69 @@ public final class PraxisFactTreeBuilder {
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
     private static final PraxisJsonLogicEngine VALIDATOR = new PraxisJsonLogicEngine();
     private final ObjectNode facts = NODES.objectNode();
+    private final DateSerializationMode dateMode;
 
     /**
-     * Creates an empty context. Builders are local to one facts capture, not shared across threads.
+     * Creates an empty context using {@link DateSerializationMode#ISO_8601}.
+     * Builders are local to one facts capture, not shared across threads.
      */
-    public PraxisFactTreeBuilder() { }
+    public PraxisFactTreeBuilder() {
+        this(DateSerializationMode.ISO_8601);
+    }
 
     /**
-     * Starts a new facts capture.
+     * Creates an empty context using the supplied {@link DateSerializationMode}.
+     * Builders are local to one facts capture, not shared across threads.
+     *
+     * @param dateMode civil date serialization mode
+     */
+    public PraxisFactTreeBuilder(DateSerializationMode dateMode) {
+        this.dateMode = Objects.requireNonNull(dateMode, "dateMode");
+    }
+
+    /**
+     * Starts a new facts capture with {@link DateSerializationMode#ISO_8601}.
      * @return empty fluent builder
      */
-    public static PraxisFactTreeBuilder create() { return new PraxisFactTreeBuilder(); }
+    public static PraxisFactTreeBuilder create() {
+        return new PraxisFactTreeBuilder(DateSerializationMode.ISO_8601);
+    }
 
     /**
-     * Captures an existing object context as the root of a new builder.
+     * Starts a new facts capture using the given {@link DateSerializationMode}.
+     * @param dateMode civil date serialization mode
+     * @return empty fluent builder
+     */
+    public static PraxisFactTreeBuilder create(DateSerializationMode dateMode) {
+        return new PraxisFactTreeBuilder(dateMode);
+    }
+
+    /**
+     * Returns the {@link DateSerializationMode} configured on this builder.
+     * @return active date serialization mode
+     */
+    public DateSerializationMode dateMode() {
+        return dateMode;
+    }
+
+    /**
+     * Captures an existing object context as the root of a new builder using {@link DateSerializationMode#ISO_8601}.
      * @param context object, record or map
      * @return builder initialized from its root properties
      */
     public static PraxisFactTreeBuilder from(Object context) {
-        ObjectNode root = toObjectNode(context);
-        PraxisFactTreeBuilder builder = create();
+        return from(context, DateSerializationMode.ISO_8601);
+    }
+
+    /**
+     * Captures an existing object context as the root of a new builder using the given {@link DateSerializationMode}.
+     * @param context object, record or map
+     * @param dateMode civil date serialization mode
+     * @return builder initialized from its root properties
+     */
+    public static PraxisFactTreeBuilder from(Object context, DateSerializationMode dateMode) {
+        ObjectNode root = toObjectNode(context, dateMode);
+        PraxisFactTreeBuilder builder = create(dateMode);
         builder.facts.setAll(root);
         return builder;
     }
@@ -71,7 +134,26 @@ public final class PraxisFactTreeBuilder {
      */
     public PraxisFactTreeBuilder put(String name, Object value) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Fact name is required");
-        facts.set(name, toJsonNode(value));
+        if (value instanceof LocalDate date && dateMode == DateSerializationMode.ISO_AND_EPOCH_DAY) {
+            facts.set(name, toJsonNode(date, DateSerializationMode.ISO_8601));
+            facts.set(name + "EpochDay", toJsonNode(date, DateSerializationMode.EPOCH_DAY));
+            return this;
+        }
+        facts.set(name, toJsonNode(value, dateMode));
+        return this;
+    }
+
+    /**
+     * Captures a nullable civil {@link LocalDate} property honoring this builder's {@link DateSerializationMode}.
+     * In {@link DateSerializationMode#ISO_AND_EPOCH_DAY}, also sets {@code <name>EpochDay} (including {@code null}).
+     *
+     * @param name literal property name
+     * @param value nullable civil date
+     * @return this builder
+     */
+    public PraxisFactTreeBuilder putDate(String name, LocalDate value) {
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Fact name is required");
+        putDate(facts, name, value, dateMode);
         return this;
     }
 
@@ -84,7 +166,10 @@ public final class PraxisFactTreeBuilder {
     public PraxisFactTreeBuilder putObject(String name, Consumer<PraxisFactTreeBuilder> consumer) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Fact name is required");
         Objects.requireNonNull(consumer, "consumer");
-        PraxisFactTreeBuilder nested = facts.get(name) instanceof ObjectNode existing ? from(existing) : create();
+        PraxisFactTreeBuilder nested =
+                facts.get(name) instanceof ObjectNode existing
+                        ? from(existing, dateMode)
+                        : create(dateMode);
         consumer.accept(nested);
         facts.set(name, nested.build());
         return this;
@@ -147,6 +232,139 @@ public final class PraxisFactTreeBuilder {
     }
 
     /**
+     * Captures a 1-hop related domain concept entity or map with deterministic {@code present}
+     * flag and safe fallback defaults when {@code entity == null}, using this builder's {@link DateSerializationMode}.
+     *
+     * @param conceptKey domain concept root name (must not be blank or {@code "facts"})
+     * @param entity resolved concept entity/record/map, or {@code null} when absent
+     * @param nullDefaults field defaults emitted alongside {@code "present": false} when {@code entity == null}
+     * @return this builder
+     */
+    public PraxisFactTreeBuilder putConceptEntity(
+            String conceptKey, Object entity, Map<String, Object> nullDefaults) {
+        return putConceptEntityInternal(conceptKey, entity, null, nullDefaults, dateMode);
+    }
+
+    /**
+     * Captures a 1-hop related domain concept entity or map with deterministic {@code present}
+     * flag and safe fallback defaults when {@code entity == null}, using an explicit {@link DateSerializationMode}.
+     *
+     * @param conceptKey domain concept root name (must not be blank or {@code "facts"})
+     * @param entity resolved concept entity/record/map, or {@code null} when absent
+     * @param nullDefaults field defaults emitted alongside {@code "present": false} when {@code entity == null}
+     * @param mode civil date serialization mode for this concept node
+     * @return this builder
+     */
+    public PraxisFactTreeBuilder putConceptEntity(
+            String conceptKey,
+            Object entity,
+            Map<String, Object> nullDefaults,
+            DateSerializationMode mode) {
+        return putConceptEntityInternal(conceptKey, entity, null, nullDefaults, mode);
+    }
+
+    /**
+     * Captures a 1-hop related domain concept entity or map with deterministic {@code present} and
+     * {@code idPresentInDraft} flags, using this builder's {@link DateSerializationMode}.
+     *
+     * <p>When {@code entity != null}, emits {@code "present": true}, {@code "idPresentInDraft"}, and
+     * projects scalar properties without triggering persistence associations. When {@code entity == null},
+     * emits {@code "present": false}, {@code "idPresentInDraft"}, and all entries from {@code nullDefaults}.</p>
+     *
+     * @param conceptKey domain concept root name (must not be blank or {@code "facts"})
+     * @param entity resolved concept entity/record/map, or {@code null} when absent
+     * @param idPresentInDraft whether the draft payload supplied a non-null foreign key for this concept
+     * @param nullDefaults field defaults emitted when {@code entity == null} (may contain {@code null} values)
+     * @return this builder
+     */
+    public PraxisFactTreeBuilder putConceptEntity(
+            String conceptKey,
+            Object entity,
+            boolean idPresentInDraft,
+            Map<String, Object> nullDefaults) {
+        return putConceptEntityInternal(
+                conceptKey, entity, Boolean.valueOf(idPresentInDraft), nullDefaults, dateMode);
+    }
+
+    /**
+     * Captures a 1-hop related domain concept entity or map with deterministic {@code present} and
+     * {@code idPresentInDraft} flags, using an explicit {@link DateSerializationMode}.
+     *
+     * @param conceptKey domain concept root name (must not be blank or {@code "facts"})
+     * @param entity resolved concept entity/record/map, or {@code null} when absent
+     * @param idPresentInDraft whether the draft payload supplied a non-null foreign key for this concept
+     * @param nullDefaults field defaults emitted when {@code entity == null} (may contain {@code null} values)
+     * @param mode civil date serialization mode for this concept node
+     * @return this builder
+     */
+    public PraxisFactTreeBuilder putConceptEntity(
+            String conceptKey,
+            Object entity,
+            boolean idPresentInDraft,
+            Map<String, Object> nullDefaults,
+            DateSerializationMode mode) {
+        return putConceptEntityInternal(
+                conceptKey, entity, Boolean.valueOf(idPresentInDraft), nullDefaults, mode);
+    }
+
+    private PraxisFactTreeBuilder putConceptEntityInternal(
+            String conceptKey,
+            Object entity,
+            Boolean idPresentInDraft,
+            Map<String, Object> nullDefaults,
+            DateSerializationMode mode) {
+        if (conceptKey == null || conceptKey.isBlank()) {
+            throw new IllegalArgumentException("Concept key is required");
+        }
+        String cleanKey = conceptKey.trim();
+        if ("facts".equals(cleanKey)) {
+            throw new IllegalArgumentException(
+                    "Flattened scalar root 'facts' is forbidden in the Praxis ontology");
+        }
+        DateSerializationMode effectiveMode = Objects.requireNonNull(mode, "mode");
+        ObjectNode node;
+        if (entity == null) {
+            node = NODES.objectNode();
+            if (nullDefaults != null && !nullDefaults.isEmpty()) {
+                TreeMap<String, Object> sorted = new TreeMap<>();
+                for (Map.Entry<String, Object> entry : nullDefaults.entrySet()) {
+                    String field = entry.getKey();
+                    if (field == null || field.isBlank()) {
+                        throw new IllegalArgumentException("Concept default key must not be blank");
+                    }
+                    sorted.put(field, entry.getValue());
+                }
+                for (Map.Entry<String, Object> entry : sorted.entrySet()) {
+                    String field = entry.getKey();
+                    Object val = entry.getValue();
+                    if (val instanceof LocalDate date
+                            && effectiveMode == DateSerializationMode.ISO_AND_EPOCH_DAY) {
+                        node.set(field, toJsonNode(date, DateSerializationMode.ISO_8601));
+                        String epochField = field + "EpochDay";
+                        if (!sorted.containsKey(epochField)) {
+                            node.set(epochField, toJsonNode(date, DateSerializationMode.EPOCH_DAY));
+                        }
+                    } else {
+                        node.set(field, toJsonNode(val, effectiveMode));
+                    }
+                }
+            }
+            node.put("present", false);
+        } else {
+            if (entity instanceof ObjectNode || entity instanceof Map<?, ?>) {
+                node = toObjectNode(entity, effectiveMode);
+            } else {
+                node = toScalarObjectNode(entity, effectiveMode);
+            }
+            node.put("present", true);
+        }
+        if (idPresentInDraft != null) {
+            node.put("idPresentInDraft", idPresentInDraft);
+        }
+        return put(cleanKey, node);
+    }
+
+    /**
      * Captures N-hop aggregate or sibling facts under the canonical {@link #ROOT_NEIGHBORHOOD} root.
      * @param neighborhood aggregate or collection neighborhood object, record or map
      * @return this builder
@@ -183,36 +401,77 @@ public final class PraxisFactTreeBuilder {
     }
 
     /**
-     * Captures scalar bean properties without reading persistence associations.
+     * Captures scalar bean properties without reading persistence associations, using this builder's
+     * {@link DateSerializationMode}.
+     *
      * @param name top-level fact name
      * @param bean preloaded bean containing scalar properties and embedded values
      * @return this builder
      */
     public PraxisFactTreeBuilder putScalarBean(String name, Object bean) {
-        return put(name, toScalarObjectNode(bean));
+        return put(name, toScalarObjectNode(bean, dateMode));
     }
 
     /**
-     * Projects scalar properties, scalar collections and explicitly embedded values.
+     * Captures scalar bean properties without reading persistence associations, using an explicit
+     * {@link DateSerializationMode}.
+     *
+     * @param name top-level fact name
+     * @param bean preloaded bean containing scalar properties and embedded values
+     * @param mode civil date serialization mode
+     * @return this builder
+     */
+    public PraxisFactTreeBuilder putScalarBean(String name, Object bean, DateSerializationMode mode) {
+        return put(name, toScalarObjectNode(bean, mode));
+    }
+
+    /**
+     * Projects scalar properties, scalar collections and explicitly embedded values using
+     * {@link DateSerializationMode#ISO_8601}.
      * Association annotations are recognized by name, without a persistence dependency.
      * Unknown object properties are omitted before their accessors are invoked.
      * @param bean preloaded object or record, never an entity graph to traverse
      * @return bounded detached scalar projection
      */
     public static ObjectNode toScalarObjectNode(Object bean) {
+        return toScalarObjectNode(bean, DateSerializationMode.ISO_8601);
+    }
+
+    /**
+     * Projects scalar properties, scalar collections and explicitly embedded values using the given
+     * {@link DateSerializationMode}.
+     * Association annotations are recognized by name, without a persistence dependency.
+     * Unknown object properties are omitted before their accessors are invoked.
+     *
+     * @param bean preloaded object or record, never an entity graph to traverse
+     * @param dateMode civil date serialization mode
+     * @return bounded detached scalar projection
+     */
+    public static ObjectNode toScalarObjectNode(Object bean, DateSerializationMode dateMode) {
         Objects.requireNonNull(bean, "bean");
-        ObjectNode result = scalarBean(bean, new IdentityHashMap<>(), new Budget(), 0);
+        Objects.requireNonNull(dateMode, "dateMode");
+        ObjectNode result =
+                scalarBean(bean, new IdentityHashMap<>(), new Budget(), 0, dateMode);
         VALIDATOR.validateResultValue(result, JsonLogicLimits.DEFAULT);
         return result;
     }
 
-    private static ObjectNode scalarBean(Object bean, IdentityHashMap<Object, Boolean> ancestors, Budget budget, int depth) {
+    private static ObjectNode scalarBean(
+            Object bean,
+            IdentityHashMap<Object, Boolean> ancestors,
+            Budget budget,
+            int depth,
+            DateSerializationMode dateMode) {
         budget.visit(depth);
         if (ancestors.put(bean, Boolean.TRUE) != null) throw new IllegalArgumentException("Cyclic embedded facts are not supported");
         try {
             ObjectNode result = NODES.objectNode();
             var properties = INTROSPECTOR.getSerializationConfig().introspect(INTROSPECTOR.constructType(bean.getClass()))
                     .findProperties().stream().sorted(Comparator.comparing(BeanPropertyDefinition::getName)).toList();
+            Set<String> propertyNames = new HashSet<>();
+            for (var p : properties) {
+                propertyNames.add(p.getName());
+            }
             for (var property : properties) {
                 var accessor = property.getAccessor();
                 if (accessor == null || persistenceAnnotation(property, Set.of("ManyToOne", "OneToMany", "OneToOne", "ManyToMany"))) continue;
@@ -225,8 +484,23 @@ public final class PraxisFactTreeBuilder {
                 accessor.fixAccess(true);
                 Object value = accessor.getValue(bean);
                 text(property.getName(), budget);
-                result.set(property.getName(), embedded && value != null ? scalarBean(value, ancestors, budget, depth + 1)
-                        : convertScalarValue(value, ancestors, budget, depth + 1));
+                result.set(property.getName(), embedded && value != null
+                        ? scalarBean(value, ancestors, budget, depth + 1, dateMode)
+                        : convertScalarValue(value, ancestors, budget, depth + 1, dateMode));
+                if (!embedded
+                        && dateMode == DateSerializationMode.ISO_AND_EPOCH_DAY
+                        && LocalDate.class.equals(type.getRawClass())) {
+                    String epochField = property.getName() + "EpochDay";
+                    if (!propertyNames.contains(epochField)) {
+                        budget.visit(depth + 1);
+                        text(epochField, budget);
+                        result.set(
+                                epochField,
+                                value instanceof LocalDate localDate
+                                        ? longNumber(localDate.toEpochDay(), budget)
+                                        : NODES.nullNode());
+                    }
+                }
             }
             return result;
         } finally { ancestors.remove(bean); }
@@ -239,7 +513,12 @@ public final class PraxisFactTreeBuilder {
                 || type == Duration.class || type == Period.class;
     }
 
-    private static JsonNode convertScalarValue(Object value, IdentityHashMap<Object, Boolean> ancestors, Budget budget, int depth) {
+    private static JsonNode convertScalarValue(
+            Object value,
+            IdentityHashMap<Object, Boolean> ancestors,
+            Budget budget,
+            int depth,
+            DateSerializationMode dateMode) {
         if (value instanceof Iterable<?> iterable) {
             for (Object item : iterable) if (item != null && !scalarType(item.getClass()))
                 throw new IllegalArgumentException("Scalar fact collections cannot contain objects");
@@ -251,7 +530,7 @@ public final class PraxisFactTreeBuilder {
         } else if (value != null && !scalarType(value.getClass())) {
             throw new IllegalArgumentException("Scalar facts cannot contain objects");
         }
-        return convert(value, ancestors, budget, depth);
+        return convert(value, ancestors, budget, depth, dateMode);
     }
 
     private static boolean persistenceAnnotation(BeanPropertyDefinition property, Set<String> names) {
@@ -289,32 +568,59 @@ public final class PraxisFactTreeBuilder {
      * Materializes a detached snapshot with deterministic object order.
      * @return sorted, detached JSON object
      */
-    public ObjectNode build() { return toObjectNode(facts); }
+    public ObjectNode build() { return toObjectNode(facts, dateMode); }
 
     /**
-     * Captures one preloaded object as a bounded native JSON object.
+     * Captures one preloaded object as a bounded native JSON object using {@link DateSerializationMode#ISO_8601}.
      * @param context host context
      * @return deterministic object
      * @throws IllegalArgumentException for scalar roots
      */
     public static ObjectNode toObjectNode(Object context) {
-        JsonNode node = toJsonNode(context);
+        return toObjectNode(context, DateSerializationMode.ISO_8601);
+    }
+
+    /**
+     * Captures one preloaded object as a bounded native JSON object using the given {@link DateSerializationMode}.
+     * @param context host context
+     * @param dateMode civil date serialization mode
+     * @return deterministic object
+     * @throws IllegalArgumentException for scalar roots
+     */
+    public static ObjectNode toObjectNode(Object context, DateSerializationMode dateMode) {
+        JsonNode node = toJsonNode(context, dateMode);
         if (!(node instanceof ObjectNode object)) throw new IllegalArgumentException("Facts root must be an object");
         return object;
     }
 
     /**
-     * Captures a supported host value using deterministic native JSON types.
+     * Captures a supported host value using deterministic native JSON types and {@link DateSerializationMode#ISO_8601}.
      * @param value preloaded host value
      * @return bounded native JSON with finite numbers
      */
     public static JsonNode toJsonNode(Object value) {
-        JsonNode node = convert(value, new IdentityHashMap<>(), new Budget(), 0);
+        return toJsonNode(value, DateSerializationMode.ISO_8601);
+    }
+
+    /**
+     * Captures a supported host value using deterministic native JSON types and the given {@link DateSerializationMode}.
+     * @param value preloaded host value
+     * @param dateMode civil date serialization mode
+     * @return bounded native JSON with finite numbers
+     */
+    public static JsonNode toJsonNode(Object value, DateSerializationMode dateMode) {
+        Objects.requireNonNull(dateMode, "dateMode");
+        JsonNode node = convert(value, new IdentityHashMap<>(), new Budget(), 0, dateMode);
         VALIDATOR.validateResultValue(node, JsonLogicLimits.DEFAULT);
         return node;
     }
 
-    private static JsonNode convert(Object value, IdentityHashMap<Object, Boolean> ancestors, Budget budget, int depth) {
+    private static JsonNode convert(
+            Object value,
+            IdentityHashMap<Object, Boolean> ancestors,
+            Budget budget,
+            int depth,
+            DateSerializationMode dateMode) {
         budget.visit(depth);
         if (value == null) return NODES.nullNode();
         if (value instanceof JsonNode json) {
@@ -328,7 +634,12 @@ public final class PraxisFactTreeBuilder {
         if (value instanceof Boolean bool) return NODES.booleanNode(bool);
         if (value instanceof Number number) return number(number, budget);
         if (value instanceof Enum<?> enumeration) return text(enumeration.name(), budget);
-        if (value instanceof LocalDate date) return text(date.format(DateTimeFormatter.ISO_LOCAL_DATE), budget);
+        if (value instanceof LocalDate date) {
+            if (dateMode == DateSerializationMode.EPOCH_DAY) {
+                return longNumber(date.toEpochDay(), budget);
+            }
+            return text(date.format(DateTimeFormatter.ISO_LOCAL_DATE), budget);
+        }
         if (value instanceof LocalDateTime dateTime) return text(dateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME), budget);
         if (value instanceof OffsetDateTime dateTime) return text(dateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME), budget);
         if (value instanceof ZonedDateTime dateTime) return text(dateTime.format(DateTimeFormatter.ISO_ZONED_DATE_TIME), budget);
@@ -339,7 +650,7 @@ public final class PraxisFactTreeBuilder {
             return text(value.toString(), budget);
         if (ancestors.put(value, Boolean.TRUE) != null) throw new IllegalArgumentException("Cyclic facts are not supported");
         try {
-            if (value instanceof Optional<?> optional) return convert(optional.orElse(null), ancestors, budget, depth + 1);
+            if (value instanceof Optional<?> optional) return convert(optional.orElse(null), ancestors, budget, depth + 1, dateMode);
             if (value instanceof Map<?, ?> map) {
                 TreeMap<String, Object> sorted = new TreeMap<>();
                 for (var entry : map.entrySet()) {
@@ -348,23 +659,33 @@ public final class PraxisFactTreeBuilder {
                     sorted.put(key, entry.getValue());
                 }
                 ObjectNode object = NODES.objectNode();
-                sorted.forEach((key, nested) -> object.set(key, convert(nested, ancestors, budget, depth + 1)));
+                sorted.forEach((key, nested) -> {
+                    object.set(key, convert(nested, ancestors, budget, depth + 1, dateMode));
+                    if (dateMode == DateSerializationMode.ISO_AND_EPOCH_DAY
+                            && nested instanceof LocalDate localDate
+                            && !sorted.containsKey(key + "EpochDay")) {
+                        String epochKey = key + "EpochDay";
+                        budget.visit(depth + 1);
+                        text(epochKey, budget);
+                        object.set(epochKey, longNumber(localDate.toEpochDay(), budget));
+                    }
+                });
                 return object;
             }
             if (value instanceof ObjectNode object) {
                 ObjectNode copy = NODES.objectNode();
                 object.properties().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
                     text(entry.getKey(), budget);
-                    copy.set(entry.getKey(), convert(entry.getValue(), ancestors, budget, depth + 1));
+                    copy.set(entry.getKey(), convert(entry.getValue(), ancestors, budget, depth + 1, dateMode));
                 });
                 return copy;
             }
             if (value instanceof Collection<?> || value instanceof ArrayNode || value.getClass().isArray()) {
                 List<JsonNode> entries = new ArrayList<>();
                 if (value instanceof Iterable<?> iterable) {
-                    for (Object nested : iterable) entries.add(convert(nested, ancestors, budget, depth + 1));
+                    for (Object nested : iterable) entries.add(convert(nested, ancestors, budget, depth + 1, dateMode));
                 } else {
-                    for (int i = 0; i < Array.getLength(value); i++) entries.add(convert(Array.get(value, i), ancestors, budget, depth + 1));
+                    for (int i = 0; i < Array.getLength(value); i++) entries.add(convert(Array.get(value, i), ancestors, budget, depth + 1, dateMode));
                 }
                 if (value instanceof Set<?>) entries.sort(Comparator.comparing(JsonNode::toString));
                 ArrayNode array = NODES.arrayNode();
@@ -376,12 +697,30 @@ public final class PraxisFactTreeBuilder {
                     .filter(property -> property.getAccessor() != null)
                     .sorted(Comparator.comparing(BeanPropertyDefinition::getName)).toList();
             if (properties.isEmpty()) throw new IllegalArgumentException("Unsupported fact type: " + value.getClass().getName());
+            Set<String> propertyNames = new HashSet<>();
+            for (BeanPropertyDefinition property : properties) {
+                propertyNames.add(property.getName());
+            }
             ObjectNode object = NODES.objectNode();
             for (BeanPropertyDefinition property : properties) {
                 text(property.getName(), budget);
                 var accessor = property.getAccessor();
                 accessor.fixAccess(true);
-                object.set(property.getName(), convert(accessor.getValue(value), ancestors, budget, depth + 1));
+                Object propValue = accessor.getValue(value);
+                object.set(property.getName(), convert(propValue, ancestors, budget, depth + 1, dateMode));
+                if (dateMode == DateSerializationMode.ISO_AND_EPOCH_DAY
+                        && LocalDate.class.equals(accessor.getType().getRawClass())) {
+                    String epochField = property.getName() + "EpochDay";
+                    if (!propertyNames.contains(epochField)) {
+                        budget.visit(depth + 1);
+                        text(epochField, budget);
+                        object.set(
+                                epochField,
+                                propValue instanceof LocalDate localDate
+                                        ? longNumber(localDate.toEpochDay(), budget)
+                                        : NODES.nullNode());
+                    }
+                }
             }
             return object;
         } finally { ancestors.remove(value); }
@@ -389,8 +728,13 @@ public final class PraxisFactTreeBuilder {
 
     private static TextNode text(String value, Budget budget) {
         if (value.length() > 64_000) throw new IllegalArgumentException("Fact string limit exceeded");
-        budget.bytes(value.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+        budget.bytes(value.getBytes(StandardCharsets.UTF_8).length);
         return NODES.textNode(value);
+    }
+
+    private static JsonNode longNumber(long value, Budget budget) {
+        budget.bytes(Long.toString(value).length());
+        return NODES.numberNode(value);
     }
 
     private static JsonNode number(Number value, Budget budget) {
@@ -611,11 +955,46 @@ public final class PraxisFactTreeBuilder {
      * @param value nullable {@link LocalDate} value
      */
     public static void putDate(ObjectNode node, String field, LocalDate value) {
+        putDate(node, field, value, DateSerializationMode.ISO_8601);
+    }
+
+    /**
+     * Null-preserving civil date property setter on an {@link ObjectNode} honoring {@link DateSerializationMode}.
+     *
+     * @param node target JSON object node
+     * @param field property name
+     * @param value nullable {@link LocalDate} value
+     * @param mode date serialization mode
+     */
+    public static void putDate(
+            ObjectNode node, String field, LocalDate value, DateSerializationMode mode) {
         Objects.requireNonNull(node, "node");
-        if (value == null) {
-            node.putNull(field);
-        } else {
-            node.put(field, value.toString());
+        Objects.requireNonNull(field, "field");
+        Objects.requireNonNull(mode, "mode");
+        switch (mode) {
+            case ISO_8601 -> {
+                if (value == null) {
+                    node.putNull(field);
+                } else {
+                    node.put(field, value.format(DateTimeFormatter.ISO_LOCAL_DATE));
+                }
+            }
+            case EPOCH_DAY -> {
+                if (value == null) {
+                    node.putNull(field);
+                } else {
+                    node.put(field, value.toEpochDay());
+                }
+            }
+            case ISO_AND_EPOCH_DAY -> {
+                if (value == null) {
+                    node.putNull(field);
+                    node.putNull(field + "EpochDay");
+                } else {
+                    node.put(field, value.format(DateTimeFormatter.ISO_LOCAL_DATE));
+                    node.put(field + "EpochDay", value.toEpochDay());
+                }
+            }
         }
     }
 

@@ -257,7 +257,11 @@ class RuleFactCatalogLoaderTest {
     @Test
     void parsesAllRealShowcaseFactCatalogsWhenPresentInMonorepo() throws Exception {
         Path showcaseFactsDir =
-                Path.of("../praxis-ergon-showcase/src/main/resources/rules/facts").normalize();
+                Path.of(
+                                System.getProperty(
+                                        "praxis.factsCatalogDir",
+                                        "../praxis-workforce-showcase/src/main/resources/rules/facts"))
+                        .normalize();
         Assumptions.assumeTrue(
                 Files.isDirectory(showcaseFactsDir),
                 "Monorepo showcase facts directory not present; skipping cross-repo smoke");

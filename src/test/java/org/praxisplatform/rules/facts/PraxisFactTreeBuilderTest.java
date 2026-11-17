@@ -236,4 +236,79 @@ class PraxisFactTreeBuilderTest {
         assertEquals(0, facts.path("neighborhood").path("sobreposicoes").asInt());
         assertEquals(10, facts.path("neighborhood").path("consumoAcumulado").asInt());
     }
+
+    @Test
+    void serializesDatesAccordingToDateSerializationModeAcrossBeansMapsAndPutDate() {
+        var entity = new ScalarEntity();
+
+        var isoBean = PraxisFactTreeBuilder.toScalarObjectNode(entity, PraxisFactTreeBuilder.DateSerializationMode.ISO_8601);
+        assertEquals("2026-11-02", isoBean.path("date").asText());
+        assertFalse(isoBean.has("dateEpochDay"));
+
+        var epochBean = PraxisFactTreeBuilder.toScalarObjectNode(entity, PraxisFactTreeBuilder.DateSerializationMode.EPOCH_DAY);
+        assertTrue(epochBean.path("date").isIntegralNumber());
+        assertEquals(entity.date.toEpochDay(), epochBean.path("date").asLong());
+        assertFalse(epochBean.has("dateEpochDay"));
+
+        var dualBean = PraxisFactTreeBuilder.toScalarObjectNode(entity, PraxisFactTreeBuilder.DateSerializationMode.ISO_AND_EPOCH_DAY);
+        assertEquals("2026-11-02", dualBean.path("date").asText());
+        assertEquals(entity.date.toEpochDay(), dualBean.path("dateEpochDay").asLong());
+
+        // Null LocalDate bean property also emits null <prop>EpochDay sibling in ISO_AND_EPOCH_DAY
+        var draftWithNullEnd = new DateRangeBean(LocalDate.of(2026, 11, 2), null);
+        var dualRange = PraxisFactTreeBuilder.toScalarObjectNode(
+                draftWithNullEnd, PraxisFactTreeBuilder.DateSerializationMode.ISO_AND_EPOCH_DAY);
+        assertEquals("2026-11-02", dualRange.path("start").asText());
+        assertEquals(LocalDate.of(2026, 11, 2).toEpochDay(), dualRange.path("startEpochDay").asLong());
+        assertTrue(dualRange.get("end").isNull());
+        assertTrue(dualRange.get("endEpochDay").isNull());
+
+        // Fluent builder propagates DateSerializationMode to nested putDraft / putDate
+        var dualTree = PraxisFactTreeBuilder.create(PraxisFactTreeBuilder.DateSerializationMode.ISO_AND_EPOCH_DAY)
+                .putDraft(d -> d.put("start", LocalDate.of(2026, 11, 2)).putDate("end", null))
+                .build();
+        assertEquals("2026-11-02", dualTree.at("/draft/start").asText());
+        assertEquals(LocalDate.of(2026, 11, 2).toEpochDay(), dualTree.at("/draft/startEpochDay").asLong());
+        assertTrue(dualTree.at("/draft/end").isNull());
+        assertTrue(dualTree.at("/draft/endEpochDay").isNull());
+
+        var epochTree = PraxisFactTreeBuilder.create(PraxisFactTreeBuilder.DateSerializationMode.EPOCH_DAY)
+                .putDraft(Map.of("start", LocalDate.of(2026, 11, 2)))
+                .build();
+        assertEquals(LocalDate.of(2026, 11, 2).toEpochDay(), epochTree.at("/draft/start").asLong());
+    }
+
+    @Test
+    void putConceptEntityEmitsPresentIdPresentInDraftAndNullDefaultsSafelyWithoutTouchingAssociations() {
+        var entity = new ScalarEntity();
+        var nullDefaults = new LinkedHashMap<String, Object>();
+        nullDefaults.put("active", false);
+        nullDefaults.put("date", null);
+        nullDefaults.put("code", "NONE");
+
+        var tree = PraxisFactTreeBuilder.create(PraxisFactTreeBuilder.DateSerializationMode.EPOCH_DAY)
+                .putConceptEntity("loaded", entity, true, nullDefaults)
+                .putConceptEntity("missingWithId", null, true, nullDefaults)
+                .putConceptEntity("optionalAbsent", null, nullDefaults)
+                .build();
+
+        assertTrue(tree.at("/loaded/present").asBoolean());
+        assertTrue(tree.at("/loaded/idPresentInDraft").asBoolean());
+        assertEquals(entity.date.toEpochDay(), tree.at("/loaded/date").asLong());
+        assertFalse(tree.path("loaded").has("children"));
+
+        assertFalse(tree.at("/missingWithId/present").asBoolean());
+        assertTrue(tree.at("/missingWithId/idPresentInDraft").asBoolean());
+        assertFalse(tree.at("/missingWithId/active").asBoolean());
+        assertTrue(tree.at("/missingWithId/date").isNull());
+        assertEquals("NONE", tree.at("/missingWithId/code").asText());
+
+        assertFalse(tree.at("/optionalAbsent/present").asBoolean());
+        assertFalse(tree.path("optionalAbsent").has("idPresentInDraft"));
+        assertFalse(tree.at("/optionalAbsent/active").asBoolean());
+        assertThrows(IllegalArgumentException.class,
+                () -> PraxisFactTreeBuilder.create().putConceptEntity("facts", entity, Map.of()));
+    }
+
+    record DateRangeBean(LocalDate start, LocalDate end) {}
 }
